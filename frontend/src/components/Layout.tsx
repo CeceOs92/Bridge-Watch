@@ -4,6 +4,7 @@ import Navbar from "./Navbar";
 import { Breadcrumb } from "./Breadcrumb";
 import { ComponentErrorBoundary } from "./ErrorBoundary";
 import ShortcutHelp from "./ShortcutHelp";
+import MaintenanceBanner from "./MaintenanceBanner";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
 export default function Layout() {
@@ -30,6 +31,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-stellar-dark">
       <Navbar />
+      <MaintenanceBanner />
       <main
         id="main-content"
         tabIndex={-1}

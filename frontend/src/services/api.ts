@@ -65,6 +65,27 @@ export async function getServerHealth(): Promise<{ status: string; timestamp: st
   return response.json();
 }
 
+export interface SystemStatus {
+  status: "healthy" | "unhealthy" | "degraded";
+  timestamp: string;
+  uptime: number;
+  version: string;
+  maintenance?: {
+    active: boolean;
+    message: string;
+    severity: "info" | "warning" | "critical";
+    statusPageUrl?: string;
+  };
+}
+
+export async function getSystemStatus(): Promise<SystemStatus> {
+  const response = await fetch("/health/detailed");
+  if (!response.ok) {
+    throw new Error(`System status check failed: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
 // Assets
 export function getAssets() {
   return fetchApi<{ assets: Asset[]; total: number }>("/assets");
