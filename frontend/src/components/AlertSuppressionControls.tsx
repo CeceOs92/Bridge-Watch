@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import HelpIcon from "./help/HelpIcon";
 import {
   createMaintenanceOverride,
   getSuppressionRules,
@@ -128,8 +129,14 @@ export default function AlertSuppressionControls() {
     <section className="rounded-xl border border-stellar-border bg-stellar-card p-6 space-y-6" aria-labelledby="suppression-controls-heading">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="suppression-controls-heading" className="text-xl font-semibold text-stellar-text-primary">
+          <h2 id="suppression-controls-heading" className="flex items-center gap-2 text-xl font-semibold text-stellar-text-primary">
             Alert suppression controls
+            <HelpIcon
+              title="Alert suppression"
+              content="Suppression rules temporarily silence alerts matching specific criteria. Useful during planned maintenance or known incidents to reduce noise."
+              link={{ href: "/docs/alerts", label: "Learn more" }}
+              placement="right"
+            />
           </h2>
           <p className="text-sm text-stellar-text-secondary mt-1">
             Active: {activeCount} of {rules.length} rules
@@ -183,10 +190,19 @@ export default function AlertSuppressionControls() {
       )}
 
       <form onSubmit={handleOverrideSubmit} className="space-y-3 rounded-lg border border-stellar-border p-4">
-        <h3 className="text-sm font-semibold text-stellar-text-primary">Create maintenance override</h3>
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-stellar-text-primary">
+          Create maintenance override
+          <HelpIcon
+            content="A maintenance override suppresses all non-critical alerts during the specified window. Alerts resume automatically when the window ends."
+            placement="auto"
+          />
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="text-xs text-stellar-text-secondary">
-            Start (UTC)
+            <span className="flex items-center gap-1.5 mb-1">
+              Start (UTC)
+              <HelpIcon content="The date and time (in UTC) when suppression begins." placement="top" />
+            </span>
             <input
               type="datetime-local"
               value={overrideStart}
@@ -195,7 +211,10 @@ export default function AlertSuppressionControls() {
             />
           </label>
           <label className="text-xs text-stellar-text-secondary">
-            End (UTC)
+            <span className="flex items-center gap-1.5 mb-1">
+              End (UTC)
+              <HelpIcon content="The date and time (in UTC) when suppression ends. Alerts will resume firing after this point." placement="top" />
+            </span>
             <input
               type="datetime-local"
               value={overrideEnd}
@@ -210,10 +229,19 @@ export default function AlertSuppressionControls() {
       </form>
 
       <form onSubmit={handlePreviewSubmit} className="space-y-3 rounded-lg border border-stellar-border p-4">
-        <h3 className="text-sm font-semibold text-stellar-text-primary">Preview suppression</h3>
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-stellar-text-primary">
+          Preview suppression
+          <HelpIcon
+            content="Test whether a hypothetical alert would be suppressed by the current rules without actually firing it."
+            placement="auto"
+          />
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="text-xs text-stellar-text-secondary">
-            Asset code
+            <span className="flex items-center gap-1.5 mb-1">
+              Asset code
+              <HelpIcon content="The ticker symbol of the asset to test, e.g. USDC or USDT." placement="top" />
+            </span>
             <input
               type="text"
               value={previewAsset}
@@ -222,7 +250,10 @@ export default function AlertSuppressionControls() {
             />
           </label>
           <label className="text-xs text-stellar-text-secondary">
-            Source
+            <span className="flex items-center gap-1.5 mb-1">
+              Source
+              <HelpIcon content="The metric source identifier, e.g. price_deviation_bps. This is matched against rule conditions." placement="top" />
+            </span>
             <input
               type="text"
               value={previewSource}
@@ -231,7 +262,10 @@ export default function AlertSuppressionControls() {
             />
           </label>
           <label className="text-xs text-stellar-text-secondary">
-            Alert type
+            <span className="flex items-center gap-1.5 mb-1">
+              Alert type
+              <HelpIcon content="The category of alert to simulate. Each type maps to a different monitoring signal." placement="top" />
+            </span>
             <select
               value={previewType}
               onChange={(event) => setPreviewType(event.target.value as PreviewType)}
@@ -245,7 +279,10 @@ export default function AlertSuppressionControls() {
             </select>
           </label>
           <label className="text-xs text-stellar-text-secondary">
-            Priority
+            <span className="flex items-center gap-1.5 mb-1">
+              Priority
+              <HelpIcon content="Severity level of the simulated alert. Critical alerts are never suppressed by standard rules." placement="top" />
+            </span>
             <select
               value={previewPriority}
               onChange={(event) => setPreviewPriority(event.target.value as PreviewPriority)}

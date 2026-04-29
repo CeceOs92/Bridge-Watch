@@ -45,7 +45,6 @@
     "analytics"
   ],
   "devDependencies": {
-    "@playwright/test": "^1.54.2",
-    "@rollup/rollup-linux-x64-gnu": "^4.60.2"
+    "@playwright/test": "^1.54.2"
   }
 }

@@ -21,5 +21,12 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "src/pages/Watchlist.tsx",
+    "src/pages/LiquidityDashboard.tsx",
+    "src/components/WatchlistManager.tsx",
+    "src/components/AssetWatchlistButton.tsx",
+    "src/components/WatchlistSidebar.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

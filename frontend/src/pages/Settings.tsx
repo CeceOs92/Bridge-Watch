@@ -2,14 +2,18 @@ import { useEffect } from "react";
 import NotificationPreferences from "../components/NotificationPreferences";
 import AlertSuppressionControls from "../components/AlertSuppressionControls";
 import HelpTooltip from "../components/help/HelpTooltip";
+import ThemePresetsSection from "../components/settings/ThemePresetsSection";
 import { usePreferences } from "../context/PreferencesContext";
 import { useToast } from "../context/ToastContext";
 import { useNotificationContext } from "../hooks/useNotificationContext";
+import { useThemeStore, selectDensity } from "../stores/themeStore";
 
 export default function Settings() {
   const { prefs, setPrefs } = usePreferences();
   const { showSuccess } = useToast();
   const { addNotification } = useNotificationContext();
+  const density = useThemeStore(selectDensity);
+  const setDensity = useThemeStore((state) => state.setDensity);
 
   useEffect(() => {
     if (prefs.reducedMotion) {
@@ -29,7 +33,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-density">
       <div>
         <h1 className="text-3xl font-bold text-stellar-text-primary mb-2">Settings</h1>
         <p className="text-stellar-text-secondary">
@@ -59,6 +63,8 @@ export default function Settings() {
           </section>
 
           <AlertSuppressionControls />
+
+          <ThemePresetsSection />
 
           <section
             className="rounded-xl border border-stellar-border bg-stellar-card p-6 space-y-6"
@@ -109,6 +115,26 @@ export default function Settings() {
                 }}
               />
             </label>
+            <label className="flex items-center justify-between gap-4 cursor-pointer">
+              <span className="text-stellar-text-secondary">
+                UI Density
+                <span className="block text-xs mt-1 text-stellar-text-secondary/80">
+                  Adjust the spacing and size of dashboard elements.
+                </span>
+              </span>
+              <select
+                className="rounded-md border border-stellar-border bg-stellar-dark px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-stellar-blue"
+                value={density}
+                onChange={(e) => {
+                  setDensity(e.target.value as any);
+                  showSuccess("Density preference updated.");
+                }}
+              >
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+                <option value="spacious">Spacious</option>
+              </select>
+            </label>
           </section>
 
           <section
@@ -125,29 +151,29 @@ export default function Settings() {
               Target interval for live dashboards. The app aligns polling with this preference where possible.
             </p>
             <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  { value: 30_000 as const, label: "30 seconds" },
-                  { value: 60_000 as const, label: "1 minute" },
-                  { value: 120_000 as const, label: "2 minutes" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setPrefs({ dataRefreshMs: opt.value });
-                    showSuccess("Refresh interval updated.");
-                  }}
-                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-stellar-blue focus:ring-offset-2 focus:ring-offset-stellar-card ${
-                    prefs.dataRefreshMs === opt.value
-                      ? "bg-stellar-blue text-white"
-                      : "bg-stellar-dark text-stellar-text-secondary hover:text-stellar-text-primary border border-stellar-border"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              <Tabs
+                activeTab={String(prefs.dataRefreshMs)}
+                onTabChange={(id) => {
+                  setPrefs({ dataRefreshMs: Number(id) as 30000 | 60000 | 120000 });
+                  showSuccess("Refresh interval updated.");
+                }}
+              >
+                <TabList aria-label="Data refresh interval" className="flex flex-wrap gap-2">
+                  {refreshOptions.map((opt) => (
+                    <Tab
+                      key={opt.value}
+                      id={String(opt.value)}
+                      activeClassName="bg-stellar-blue text-white border-stellar-blue"
+                      inactiveClassName="bg-stellar-dark text-stellar-text-secondary hover:text-stellar-text-primary border border-stellar-border"
+                    >
+                      {opt.label}
+                    </Tab>
+                  ))}
+                </TabList>
+                {refreshOptions.map((opt) => (
+                  <TabPanel key={opt.value} id={String(opt.value)} keepMounted />
+                ))}
+              </Tabs>
             </div>
           </section>
 

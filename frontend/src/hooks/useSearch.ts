@@ -14,7 +14,9 @@ export interface SearchResult {
 }
 
 const STORAGE_KEY = "bridge-watch:recent-searches";
+const SAVED_STORAGE_KEY = "bridge-watch:saved-searches";
 const MAX_RECENT = 8;
+const MAX_SAVED = 30;
 const DEBOUNCE_MS = 200;
 
 const PAGE_RESULTS: SearchResult[] = [
@@ -74,6 +76,31 @@ function loadRecentSearches(): SearchResult[] {
 function saveRecentSearches(items: SearchResult[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENT)));
+  } catch {
+    // Ignore storage quota failures.
+  }
+}
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  query: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function loadSavedSearches(): SavedSearch[] {
+  try {
+    const raw = localStorage.getItem(SAVED_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SavedSearch[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSavedSearches(items: SavedSearch[]): void {
+  try {
+    localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_SAVED)));
   } catch {
     // Ignore storage quota failures.
   }
@@ -139,6 +166,12 @@ export interface UseSearchReturn {
   recentSearches: SearchResult[];
   addRecentSearch: (result: SearchResult) => void;
   clearRecentSearches: () => void;
+  savedSearches: SavedSearch[];
+  saveCurrentQuery: (name?: string) => SavedSearch | null;
+  deleteSavedSearch: (id: string) => void;
+  renameSavedSearch: (id: string, name: string) => void;
+  applySavedSearch: (id: string) => string | null;
+  getSavedSearchShareUrl: (saved: SavedSearch) => string;
   debouncedQuery: string;
 }
 
@@ -148,6 +181,7 @@ export function useSearch(): UseSearchReturn {
   const [recentSearches, setRecentSearches] = useState<SearchResult[]>(
     loadRecentSearches
   );
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(loadSavedSearches);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), DEBOUNCE_MS);
@@ -206,6 +240,67 @@ export function useSearch(): UseSearchReturn {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const saveCurrentQuery = useCallback((name?: string) => {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) return null;
+
+    const now = new Date().toISOString();
+    const newSaved: SavedSearch = {
+      id: `saved-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: name?.trim() || normalizedQuery,
+      query: normalizedQuery,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setSavedSearches((prev) => {
+      const deduped = [
+        newSaved,
+        ...prev.filter(
+          (item) => item.query.toLowerCase() !== normalizedQuery.toLowerCase() || item.name !== newSaved.name
+        ),
+      ];
+      saveSavedSearches(deduped);
+      return deduped.slice(0, MAX_SAVED);
+    });
+
+    return newSaved;
+  }, [query]);
+
+  const deleteSavedSearch = useCallback((id: string) => {
+    setSavedSearches((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      saveSavedSearches(next);
+      return next;
+    });
+  }, []);
+
+  const renameSavedSearch = useCallback((id: string, name: string) => {
+    const normalized = name.trim();
+    if (!normalized) return;
+
+    setSavedSearches((prev) => {
+      const next = prev.map((item) =>
+        item.id === id ? { ...item, name: normalized, updatedAt: new Date().toISOString() } : item
+      );
+      saveSavedSearches(next);
+      return next;
+    });
+  }, []);
+
+  const applySavedSearch = useCallback((id: string) => {
+    const selected = savedSearches.find((item) => item.id === id);
+    if (!selected) return null;
+    setQuery(selected.query);
+    return selected.query;
+  }, [savedSearches]);
+
+  const getSavedSearchShareUrl = useCallback((saved: SavedSearch) => {
+    const share = new URL(window.location.href);
+    share.searchParams.set("q", saved.query);
+    return share.toString();
+  }, []);
+
   return {
     query,
     setQuery,
@@ -214,6 +309,12 @@ export function useSearch(): UseSearchReturn {
     recentSearches,
     addRecentSearch,
     clearRecentSearches,
+    savedSearches,
+    saveCurrentQuery,
+    deleteSavedSearch,
+    renameSavedSearch,
+    applySavedSearch,
+    getSavedSearchShareUrl,
     debouncedQuery,
   };
 }

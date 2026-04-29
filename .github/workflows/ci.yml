@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  NODE_VERSION: "20"
+  CACHE_VERSION: v1
+
 jobs:
   # Node.js Job for Backend & Frontend
   node-ci:
@@ -42,9 +46,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: package-lock.json
+
+      - name: Restore backend build and test caches
+        id: backend-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            backend/dist
+            backend/coverage
+            backend/.eslintcache
+          key: ${{ runner.os }}-backend-cache-${{ env.CACHE_VERSION }}-${{ hashFiles('package-lock.json', 'backend/package.json', '.github/workflows/ci.yml', 'backend/src/**', 'backend/test/**') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-cache-${{ env.CACHE_VERSION }}-${{ hashFiles('package-lock.json', 'backend/package.json', '.github/workflows/ci.yml') }}-
+            ${{ runner.os }}-backend-cache-${{ env.CACHE_VERSION }}-
 
       - name: Install dependencies
         run: npm ci
@@ -77,6 +94,20 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
 
+      - name: Save backend build and test caches
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            backend/dist
+            backend/coverage
+            backend/.eslintcache
+          key: ${{ steps.backend-cache-restore.outputs.cache-primary-key }}
+
+      - name: Backend cache report
+        run: |
+          echo "backend_cache_hit=${{ steps.backend-cache-restore.outputs.cache-hit }}" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         with:
@@ -95,9 +126,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: package-lock.json
+
+      - name: Restore frontend build and test caches
+        id: frontend-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            frontend/dist
+            frontend/storybook-static
+            frontend/.eslintcache
+            frontend/.vite
+          key: ${{ runner.os }}-frontend-cache-${{ env.CACHE_VERSION }}-${{ hashFiles('package-lock.json', 'frontend/package.json', '.github/workflows/ci.yml', 'frontend/src/**', 'frontend/test/**') }}
+          restore-keys: |
+            ${{ runner.os }}-frontend-cache-${{ env.CACHE_VERSION }}-${{ hashFiles('package-lock.json', 'frontend/package.json', '.github/workflows/ci.yml') }}-
+            ${{ runner.os }}-frontend-cache-${{ env.CACHE_VERSION }}-
 
       - name: Install dependencies
         run: npm ci
@@ -108,9 +153,27 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Storybook build
+        run: npm --workspace=frontend run build-storybook
+
       - name: Test
         run: npm run test
         continue-on-error: true
+
+      - name: Save frontend build and test caches
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            frontend/dist
+            frontend/storybook-static
+            frontend/.eslintcache
+            frontend/.vite
+          key: ${{ steps.frontend-cache-restore.outputs.cache-primary-key }}
+
+      - name: Frontend cache report
+        run: |
+          echo "frontend_cache_hit=${{ steps.frontend-cache-restore.outputs.cache-hit }}" >> "$GITHUB_STEP_SUMMARY"
 
   # Rust Job for Smart Contracts
   rust-ci:

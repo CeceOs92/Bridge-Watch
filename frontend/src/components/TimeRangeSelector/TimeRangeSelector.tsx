@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTimeRange } from "../../hooks/useTimeRange";
 import {
   formatRangeLabel,
@@ -40,6 +40,7 @@ export default function TimeRangeSelector({
   } = useTimeRange();
 
   const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const customRangeButtonRef = useRef<HTMLButtonElement>(null);
   const activeSelection = getEffectiveSelection(chartId);
   const chartSelection = getChartSelection(chartId);
   const activePreset = getPresetFromSelection(activeSelection);
@@ -71,7 +72,7 @@ export default function TimeRangeSelector({
                 key={preset.id}
                 type="button"
                 onClick={() => applySelection({ preset: preset.id })}
-                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-stellar-blue/50 ${
                   isActive
                     ? "bg-stellar-blue text-white"
                     : "border border-stellar-border text-stellar-text-secondary hover:text-white"
@@ -87,9 +88,10 @@ export default function TimeRangeSelector({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
+          ref={customRangeButtonRef}
           type="button"
           onClick={() => setShowCustomPicker((value) => !value)}
-          className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary hover:text-white"
+          className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-stellar-blue/50"
           aria-expanded={showCustomPicker}
         >
           {showCustomPicker ? "Hide custom" : "Custom range"}
@@ -99,7 +101,7 @@ export default function TimeRangeSelector({
           <button
             type="button"
             onClick={() => applySelection(lastSelection)}
-            className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary hover:text-white"
+            className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-stellar-blue/50"
           >
             Restore last selection
           </button>
@@ -108,7 +110,7 @@ export default function TimeRangeSelector({
         <button
           type="button"
           onClick={() => clearSelection(chartId)}
-          className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary hover:text-white"
+          className="rounded border border-stellar-border px-3 py-1.5 text-xs text-stellar-text-secondary transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-stellar-blue/50"
         >
           Clear selection
         </button>
@@ -137,8 +139,15 @@ export default function TimeRangeSelector({
       {showCustomPicker ? (
         <DateRangePicker
           value={activeSelection}
-          onApply={(selection) => applySelection(selection)}
-          onClear={() => clearSelection(chartId)}
+          onApply={(selection) => {
+            applySelection(selection);
+            setShowCustomPicker(false);
+          }}
+          onClear={() => {
+            clearSelection(chartId);
+            setShowCustomPicker(false);
+          }}
+          triggerRef={customRangeButtonRef}
         />
       ) : null}
     </div>

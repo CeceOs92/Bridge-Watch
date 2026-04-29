@@ -8,17 +8,22 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 import type { DataTableColumnDef, DataTableState } from "./types";
+import { useTableSorting } from "./useTableSorting";
 
 type UseDataTableOptions<TData> = {
   columns: Array<DataTableColumnDef<TData>>;
   defaultPageSize?: number;
   defaultPageIndex?: number;
+  defaultSorting?: SortingState;
+  storageKey?: string;
 };
 
 export function useDataTable<TData>({
   columns,
   defaultPageIndex = 0,
   defaultPageSize = 10,
+  defaultSorting = [],
+  storageKey,
 }: UseDataTableOptions<TData>) {
   const defaultVisibility = useMemo(() => {
     const v: VisibilityState = {};
@@ -29,7 +34,15 @@ export function useDataTable<TData>({
     return v;
   }, [columns]);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const {
+    sorting,
+    setSorting,
+    clearSorting,
+    hasSorting,
+  } = useTableSorting({
+    defaultSorting,
+    storageKey: storageKey ? `${storageKey}:sorting` : undefined,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [pagination, setPagination] = useState<PaginationState>({
@@ -63,6 +76,8 @@ export function useDataTable<TData>({
   return {
     state,
     setSorting,
+    clearSorting,
+    hasSorting,
     setColumnFilters,
     setGlobalFilter,
     setPagination,

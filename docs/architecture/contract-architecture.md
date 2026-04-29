@@ -132,6 +132,11 @@ pub struct LiquidityDepth {
 - Parameter update through governance process
 - Time-locked execution of approved changes
 
+**Configuration history**
+- Every `set_config()` write appends an audit entry with the previous value, new value, version, timestamp, and author.
+- The history is capped per key and exposed through `get_config_audit_log()`.
+- See [contract-configuration-history.md](../contract-configuration-history.md) for the read/write flow and operational guidance.
+
 ## Transfer State Machine Contract
 
 ### State Diagram

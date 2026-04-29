@@ -148,6 +148,17 @@ export interface AssetInfo {
   sourceChain?: string;
 }
 
+export interface AssetMetadata {
+  id: string;
+  asset_id: string;
+  symbol: string;
+  category: string | null;
+  tags: string[];
+  description?: string | null;
+  updated_at?: string;
+  version?: number;
+}
+
 export interface PriceSource {
   source: string;
   price: number;
@@ -188,3 +199,83 @@ export interface CreateApiKeyResponse {
   apiKey: string;
   key: ApiKeyRecord;
 }
+
+/** Service dependency graph (`/metadata/dependencies`) */
+export type DependencyNodeStatus = "healthy" | "degraded" | "down" | "unknown";
+
+export type DependencyNodeType = string;
+
+export interface DependencyGraph {
+  summary: {
+    totalNodes: number;
+    degradedServices: number;
+    downServices: number;
+  };
+  nodes: Array<{
+    id: string;
+    label: string;
+    description: string;
+    type: DependencyNodeType;
+    status: DependencyNodeStatus;
+    impactHint: string;
+  }>;
+  edges: Array<{ from: string; to: string; kind: string }>;
+}
+
+export type AlertRoutingSeverity = "critical" | "high" | "medium" | "low";
+export type AlertRoutingChannel = "in_app" | "webhook" | "email";
+export type AlertRoutingAuditStatus =
+  | "queued"
+  | "delivered"
+  | "suppressed"
+  | "failed"
+  | "fallback";
+
+export interface AlertRoutingRule {
+  id: string;
+  name: string;
+  ownerAddress: string | null;
+  severityLevels: AlertRoutingSeverity[];
+  assetCodes: string[];
+  sourceTypes: string[];
+  channels: AlertRoutingChannel[];
+  fallbackChannels: AlertRoutingChannel[];
+  suppressionWindowSeconds: number;
+  priorityOrder: number;
+  isActive: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertRoutingAuditEntry {
+  id: string;
+  eventTime: string;
+  alertRuleId: string;
+  routingRuleId: string | null;
+  ownerAddress: string;
+  assetCode: string;
+  sourceType: string;
+  severity: AlertRoutingSeverity;
+  channel: string;
+  status: AlertRoutingAuditStatus;
+  reason: string | null;
+  attemptCount: number;
+  latencyMs: number | null;
+  createdAt: string;
+}
+
+export interface CreateAlertRoutingRuleRequest {
+  name: string;
+  ownerAddress?: string;
+  severityLevels?: AlertRoutingSeverity[];
+  assetCodes?: string[];
+  sourceTypes?: string[];
+  channels: AlertRoutingChannel[];
+  fallbackChannels?: AlertRoutingChannel[];
+  suppressionWindowSeconds?: number;
+  priorityOrder?: number;
+  isActive?: boolean;
+}
+
+export type UpdateAlertRoutingRuleRequest = Partial<CreateAlertRoutingRuleRequest>;

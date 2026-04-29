@@ -3,42 +3,40 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NotificationProvider } from "../context/NotificationContext";
 import { WebSocketProvider } from "../contexts/WebSocketContext";
+import { WatchlistProvider } from "../hooks/useWatchlist";
 import ThemeProvider from "../theme/ThemeProvider";
 import Navbar from "./Navbar";
+import { useNotificationStore } from "../stores/notificationStore";
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-});
+function resetNotifications() {
+  useNotificationStore.setState(useNotificationStore.getInitialState(), true);
+}
 
 describe("Navbar", () => {
-  it("opens and closes the mobile navigation drawer", () => {
+  it("toggles the mobile navigation panel", () => {
     render(
       <MemoryRouter>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <WebSocketProvider>
-              <NotificationProvider>
-                <Navbar />
-              </NotificationProvider>
+              <WatchlistProvider>
+                <NotificationProvider>
+                  <Navbar />
+                </NotificationProvider>
+              </WatchlistProvider>
             </WebSocketProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </MemoryRouter>
     );
 
-    const openButton = screen.getByRole("button", {
-      name: /open navigation menu/i,
-    });
+    const toggle = screen.getByRole("button", { name: /toggle navigation/i });
+    expect(document.getElementById("mobile-nav-links")).toBeNull();
 
-    fireEvent.click(openButton);
-    expect(
-      screen.getByRole("dialog", { name: /mobile navigation/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/control surface/i)).toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(document.getElementById("mobile-nav-links")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /close mobile menu/i }));
-    expect(
-      screen.getByRole("button", { name: /open navigation menu/i })
-    ).toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(document.getElementById("mobile-nav-links")).toBeNull();
   });
 });

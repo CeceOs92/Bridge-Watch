@@ -1,15 +1,21 @@
 import type {
+  AlertRoutingAuditEntry,
+  AlertRoutingRule,
   ApiKeyRecord,
   Asset,
+  AssetMetadata,
   AssetInfo,
   AssetWithHealth,
+  CreateAlertRoutingRuleRequest,
   Bridge,
   BridgeStats,
   CreateApiKeyRequest,
   CreateApiKeyResponse,
+  DependencyGraph,
   HealthScore,
   TransactionFilters,
   TransactionPage,
+  UpdateAlertRoutingRuleRequest,
 } from "../types";
 const API_BASE_URL = "/api/v1";
 
@@ -43,6 +49,10 @@ async function fetchApi<T>(
     throw new Error(`API error: ${response.status} ${response.statusText}${suffix}`);
   }
 
+  if (response.status === 204) {
+    return {} as T;
+  }
+
   return response.json();
 }
 
@@ -51,6 +61,27 @@ export async function getServerHealth(): Promise<{ status: string; timestamp: st
   const response = await fetch("/health");
   if (!response.ok) {
     throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export interface SystemStatus {
+  status: "healthy" | "unhealthy" | "degraded";
+  timestamp: string;
+  uptime: number;
+  version: string;
+  maintenance?: {
+    active: boolean;
+    message: string;
+    severity: "info" | "warning" | "critical";
+    statusPageUrl?: string;
+  };
+}
+
+export async function getSystemStatus(): Promise<SystemStatus> {
+  const response = await fetch("/health/detailed");
+  if (!response.ok) {
+    throw new Error(`System status check failed: ${response.status} ${response.statusText}`);
   }
   return response.json();
 }
@@ -122,6 +153,26 @@ export function getAssetPrice(symbol: string) {
 
 export function getAssetInfo(symbol: string) {
   return fetchApi<AssetInfo | null>(`/assets/${symbol}/info`);
+}
+
+export function getAssetMetadataBySymbol(symbol: string) {
+  return fetchApi<AssetMetadata>(`/metadata/symbol/${symbol}`);
+}
+
+export function upsertAssetMetadata(payload: {
+  assetId: string;
+  symbol: string;
+  metadata: {
+    category?: string | null;
+    tags?: string[];
+    description?: string | null;
+  };
+  updatedBy: string;
+}) {
+  return fetchApi<AssetMetadata>("/metadata", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getAssetPriceHistory(symbol: string, timeframe: string) {
@@ -238,6 +289,22 @@ export function getBridgeStats(bridge: string) {
   return fetchApi<BridgeStats | null>(`/bridges/${bridge}/stats`);
 }
 
+export function getDependencyGraph(filters?: {
+  type?: string;
+  status?: string;
+  search?: string;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.type) params.set("type", filters.type);
+  if (filters?.status) params.set("status", filters.status);
+  if (filters?.search) params.set("q", filters.search);
+
+  const query = params.toString();
+  return fetchApi<DependencyGraph>(
+    `/metadata/dependencies${query ? `?${query}` : ""}`
+  );
+}
+
 // Transactions
 export function getTransactions(
   filters: TransactionFilters,
@@ -312,6 +379,82 @@ export function extendApiKey(apiKey: string, id: string, extraDays: number) {
       method: "POST",
       body: JSON.stringify({ extraDays }),
     },
+    apiKey
+  );
+}
+
+// Alert routing admin
+export function listAlertRoutingRules(apiKey: string, ownerAddress?: string) {
+  const suffix = ownerAddress
+    ? `?ownerAddress=${encodeURIComponent(ownerAddress)}`
+    : "";
+  return fetchApi<{ rules: AlertRoutingRule[] }>(
+    `/admin/alert-routing/rules${suffix}`,
+    undefined,
+    apiKey
+  );
+}
+
+export function createAlertRoutingRule(
+  apiKey: string,
+  payload: CreateAlertRoutingRuleRequest
+) {
+  return fetchApi<{ rule: AlertRoutingRule }>(
+    "/admin/alert-routing/rules",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    apiKey
+  );
+}
+
+export function updateAlertRoutingRule(
+  apiKey: string,
+  id: string,
+  payload: UpdateAlertRoutingRuleRequest
+) {
+  return fetchApi<{ rule: AlertRoutingRule }>(
+    `/admin/alert-routing/rules/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    apiKey
+  );
+}
+
+export function deleteAlertRoutingRule(apiKey: string, id: string) {
+  return fetchApi<Record<string, never>>(
+    `/admin/alert-routing/rules/${id}`,
+    {
+      method: "DELETE",
+    },
+    apiKey
+  );
+}
+
+export function getAlertRoutingAudit(
+  apiKey: string,
+  options?: {
+    ownerAddress?: string;
+    status?: "queued" | "delivered" | "suppressed" | "failed" | "fallback";
+    channel?: string;
+    limit?: number;
+  }
+) {
+  const params = new URLSearchParams();
+  if (options?.ownerAddress) params.set("ownerAddress", options.ownerAddress);
+  if (options?.status) params.set("status", options.status);
+  if (options?.channel) params.set("channel", options.channel);
+  if (options?.limit) params.set("limit", String(options.limit));
+
+  const qs = params.toString();
+  const suffix = qs ? `?${qs}` : "";
+
+  return fetchApi<{ entries: AlertRoutingAuditEntry[] }>(
+    `/admin/alert-routing/audit${suffix}`,
+    undefined,
     apiKey
   );
 }

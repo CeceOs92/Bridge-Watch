@@ -7,6 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import ChartTooltip from "./Tooltip/ChartTooltip.js";
 import { useMemo } from "react";
@@ -17,6 +18,8 @@ import {
   getColorblindModePreference,
   getVisualizationTheme,
 } from "../styles/colors";
+import type { ChartAnnotation } from "../hooks/useChartAnnotations";
+import HelpIcon from "./help/HelpIcon";
 
 interface PriceDataPoint {
   timestamp: string;
@@ -29,6 +32,7 @@ interface PriceChartProps {
   data: PriceDataPoint[];
   isLoading: boolean;
   chartId: string;
+  annotations?: ChartAnnotation[];
 }
 
 export default function PriceChart({
@@ -36,6 +40,7 @@ export default function PriceChart({
   data,
   isLoading,
   chartId,
+  annotations = [],
 }: PriceChartProps) {
   const { getEffectiveSelection } = useTimeRange();
   const selection = getEffectiveSelection(chartId);
@@ -74,6 +79,14 @@ export default function PriceChart({
     [filteredData]
   );
 
+  const annotationMarks = useMemo(
+    () =>
+      annotations.filter((annotation) =>
+        filteredData.some((entry) => entry.timestamp === annotation.timestamp)
+      ),
+    [annotations, filteredData]
+  );
+
   const sourceColors = useMemo(
     () =>
       sources.reduce<Record<string, string>>((acc, source, index) => {
@@ -87,8 +100,12 @@ export default function PriceChart({
   if (isLoading) {
     return (
       <div className="bg-stellar-card border border-stellar-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
           {symbol} Price History
+          <HelpIcon
+            content="Aggregated price feeds from multiple oracle sources. Each line represents a distinct data provider. Divergence between lines may indicate a price anomaly."
+            placement="auto"
+          />
         </h3>
         <div className="h-64 flex items-center justify-center">
           <span className="text-stellar-text-secondary">Loading chart data...</span>
@@ -100,8 +117,12 @@ export default function PriceChart({
   if (chartData.length === 0) {
     return (
       <div className="bg-stellar-card border border-stellar-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
           {symbol} Price History
+          <HelpIcon
+            content="Aggregated price feeds from multiple oracle sources. Each line represents a distinct data provider. Divergence between lines may indicate a price anomaly."
+            placement="auto"
+          />
         </h3>
         <div className="h-64 flex items-center justify-center">
           <span className="text-stellar-text-secondary">
@@ -114,8 +135,12 @@ export default function PriceChart({
 
   return (
     <div className="bg-stellar-card border border-stellar-border rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
         {symbol} Price History
+        <HelpIcon
+          content="Aggregated price feeds from multiple oracle sources. Each line represents a distinct data provider. Divergence between lines may indicate a price anomaly."
+          placement="auto"
+        />
       </h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
@@ -143,6 +168,21 @@ export default function PriceChart({
               stroke={sourceColors[source]}
               dot={false}
               strokeWidth={2}
+            />
+          ))}
+          {annotationMarks.map((annotation) => (
+            <ReferenceLine
+              key={annotation.id}
+              x={annotation.timestamp}
+              stroke={annotation.color}
+              strokeDasharray="4 4"
+              ifOverflow="extendDomain"
+              label={{
+                value: annotation.label,
+                fill: annotation.color,
+                fontSize: 11,
+                position: "top",
+              }}
             />
           ))}
         </LineChart>

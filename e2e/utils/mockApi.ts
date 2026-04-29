@@ -1,16 +1,25 @@
 import { type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { 
+  buildAssetWithHealth, 
+  buildBridge 
+} from "../../frontend/src/test/factories";
 
-const assetsFixture = JSON.parse(
-  readFileSync(resolve(__dirname, "../fixtures/assets.json"), "utf8"),
-);
-const assetHealthFixture = JSON.parse(
-  readFileSync(resolve(__dirname, "../fixtures/asset-health.json"), "utf8"),
-);
-const bridgesFixture = JSON.parse(
-  readFileSync(resolve(__dirname, "../fixtures/bridges.json"), "utf8"),
-);
+const assetsFixture = [
+  buildAssetWithHealth({ symbol: "XLM", name: "Stellar Lumens" }, 100),
+  buildAssetWithHealth({ symbol: "USDC", name: "USD Coin" }, 101),
+];
+
+const assetHealthFixture = {
+  XLM: assetsFixture[0].health,
+  USDC: assetsFixture[1].health,
+};
+
+const bridgesFixture = {
+  bridges: [
+    buildBridge({ name: "Stellar-Ethereum", status: "healthy" }, 200),
+    buildBridge({ name: "Stellar-Celo", status: "degraded" }, 201),
+  ]
+};
 
 const jsonHeaders = { "content-type": "application/json" };
 

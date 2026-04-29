@@ -30,6 +30,11 @@ export const navGroups: NavGroup[] = [
       { to: "/help", label: "Help Center", description: "Search docs, FAQ, and support workflows" },
       { to: "/api-docs", label: "API Docs", description: "Interactive API documentation and explorer" },
       { to: "/admin/api-keys", label: "API Keys", description: "Manage integrator credentials" },
+      {
+        to: "/admin/alert-routing",
+        label: "Alert Routing",
+        description: "Manage alert dispatch routing and audit",
+      },
       { to: "/settings", label: "Settings", description: "Notification and dashboard preferences" },
     ],
   },

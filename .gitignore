@@ -7,6 +7,7 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+frontend/storybook-static/
 
 # Environment variables
 .env

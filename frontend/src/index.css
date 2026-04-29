@@ -9,6 +9,9 @@
   --stellar-border: 226 232 240;
   --stellar-text-primary: 15 23 42;
   --stellar-text-secondary: 71 85 105;
+  --spacing-base: 1rem;
+  --card-padding: 1.5rem;
+  --section-gap: 2rem;
 }
 
 .dark {
@@ -18,6 +21,18 @@
   --stellar-border: 30 35 64;
   --stellar-text-primary: 255 255 255;
   --stellar-text-secondary: 138 143 168;
+}
+
+[data-density="compact"] {
+  --spacing-base: 0.5rem;
+  --card-padding: 0.75rem;
+  --section-gap: 1rem;
+}
+
+[data-density="spacious"] {
+  --spacing-base: 1.5rem;
+  --card-padding: 2.5rem;
+  --section-gap: 3rem;
 }
 
 html,
@@ -166,6 +181,18 @@ body {
   .print-only {
     display: block !important;
   }
+}
+
+.space-y-density > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--section-gap);
+}
+
+.p-density {
+  padding: var(--card-padding);
+}
+
+.gap-density {
+  gap: var(--spacing-base);
 }
 @keyframes skeleton-shimmer {
   0% {
