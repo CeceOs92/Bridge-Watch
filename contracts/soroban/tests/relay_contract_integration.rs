@@ -10,7 +10,7 @@ use relay::{
 use soroban_sdk::{
     symbol_short,
     testutils::{Address as _, Events, Ledger},
-    Address, Bytes, BytesN, Env, IntoVal, Symbol, Vec,
+    Address, Bytes, BytesN, Env, IntoVal, Symbol, Val, Vec,
 };
 
 fn setup_context() -> (Env, soroban_sdk::Address, Address, Address) {
@@ -114,7 +114,7 @@ fn assert_has_event(env: &Env, contract: &Address, expected_topic: Symbol) {
         let (addr, topics, _data) = events.get(i).unwrap();
         if addr == *contract && !topics.is_empty() {
             let topic_val = topics.get(0).unwrap();
-            let expected_val = expected_topic.into_val(env);
+            let expected_val: Val = expected_topic.into_val(env);
             if topic_val.get_payload() == expected_val.get_payload() {
                 found = true;
                 break;

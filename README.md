@@ -53,6 +53,32 @@ To become the standard monitoring infrastructure for bridged assets on Stellar, 
 
 Continuous tracking of bridged asset supplies across chains with automated verification against official reserve data. This includes monitoring mint and burn events, detecting supply mismatches, and maintaining historical records of bridge performance and uptime.
 
+### On-Chain Bridge Status Aggregation (Soroban)
+
+The Soroban contract maintains **pre-aggregated rollups** for fast reads (no scanning across all assets/bridges at query time). Rollups are normalized into severity tiers:
+
+`StatusTier`: `Ok` | `Low` | `Medium` | `High`
+
+Stored rollup views:
+
+- **Per-asset**: `AssetStatusRollup` (health score + price deviation alerts + paused/active flags)
+- **Per-bridge**: `BridgeStatusRollup` (latest supply mismatch severity)
+- **Contract-level**: `ContractStatusRollup` (counts by tier across assets and bridges, plus an overall tier)
+
+Read functions (Soroban):
+
+- `get_asset_status_rollup(asset_code)`
+- `get_bridge_status_rollup(bridge_id)`
+- `get_contract_status_rollup()`
+
+Rollups are updated deterministically when new signals are submitted (for example, `submit_health`, `check_price_deviation`, and `record_supply_mismatch`).
+
+Events:
+
+- `asset_st` — asset tier updated
+- `bridge_st` — bridge tier updated
+- `ctr_st` — contract-level tier updated
+
 ### Liquidity Analytics
 
 Aggregated liquidity depth across StellarX AMM, Phoenix DEX, LumenSwap, SDEX, and Soroswap. The platform provides real-time total value locked per asset pair, best route suggestions for optimal trade execution, and volume-weighted average pricing across all venues.
