@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAssetsWithHealth } from "../hooks/useAssets";
 import { useBridges } from "../hooks/useBridges";
@@ -22,13 +21,19 @@ import { useFavorites } from "../hooks/useFavorites";
 import ExportPickerDialog from "../components/ExportPickerDialog";
 import { Tabs, TabList, Tab, TabPanel } from "../components/Tabs";
 import { RecentActivityTimeline } from "../components/timeline";
-import type { AssetWithHealth, FilterStatus } from "../types";
+import KpiBanner, { type KpiBannerItem } from "../components/dashboard/KpiBanner";
+import DrilldownDrawer, {
+  type DrilldownContext,
+} from "../components/dashboard/DrilldownDrawer";
+import DashboardSharingModal from "../components/dashboard/DashboardSharingModal";
+import type { AssetWithHealth, Bridge, FilterStatus } from "../types";
 
 type DashboardView = "overview" | "assets" | "bridges";
 type BridgeStatusFilter = "all" | "healthy" | "degraded" | "down" | "unknown";
 
 const VIEW_PARAM = "dashboard_view";
 const BRIDGE_STATUS_PARAM = "dashboard_bridge_status";
+const DRILLDOWN_PARAM = "drilldown";
 
 const dashboardViews: Array<{ id: DashboardView; label: string; description: string }> = [
   { id: "overview", label: "Overview", description: "Assets and bridges together" },
@@ -87,6 +92,25 @@ function filterAssets(assets: AssetWithHealth[], filters: DashboardFilters): Ass
   });
 }
 
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(2)}K`;
+  return `$${value.toFixed(2)}`;
+}
+
+function formatPercent(value: number): string {
+  return `${value.toFixed(1)}%`;
+}
+
+function buildBridgeRows(bridges: Bridge[]) {
+  return bridges.slice(0, 8).map((bridge) => ({
+    label: bridge.name,
+    value: formatCurrency(bridge.totalValueLocked),
+    status: `${bridge.status} - ${bridge.mismatchPercentage.toFixed(3)}% mismatch`,
+  }));
+}
+
 function useDashboardUrlState() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -118,7 +142,10 @@ function useDashboardUrlState() {
 }
 
 export default function Dashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [exportPickerOpen, setExportPickerOpen] = useState(false);
+  const [sharingOpen, setSharingOpen] = useState(false);
   const {
     data: assetsWithHealth,
     isLoading: assetsLoading,
@@ -210,6 +237,157 @@ export default function Dashboard() {
     dashboard.state.bridgeStatus !== "all" ||
     filters.bridges.length > 0 ||
     favoritesFilterMode === "favorites";
+  const activeDrilldownId = new URLSearchParams(location.search).get(DRILLDOWN_PARAM);
+  const totalTvl = useMemo(
+    () => filteredBridges.reduce((sum, bridge) => sum + bridge.totalValueLocked, 0),
+    [filteredBridges],
+  );
+  const activeBridgeCount = filteredBridges.filter((bridge) => bridge.status !== "down").length;
+  const averageHealth = useMemo(() => {
+    const scores = filteredAssets
+      .map((asset) => asset.health?.overallScore)
+      .filter((score): score is number => typeof score === "number");
+    if (!scores.length) return 0;
+    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  }, [filteredAssets]);
+  const improvingAssets = filteredAssets.filter((asset) => asset.health?.trend === "improving").length;
+  const deterioratingAssets = filteredAssets.filter(
+    (asset) => asset.health?.trend === "deteriorating",
+  ).length;
+  const mismatchBridgeCount = filteredBridges.filter((bridge) => bridge.mismatchPercentage > 1).length;
+  const kpiItems = useMemo<KpiBannerItem[]>(
+    () => [
+      {
+        id: "tvl",
+        label: "Total value locked",
+        value: formatCurrency(totalTvl),
+        delta: `${filteredBridges.length} bridges`,
+        trend: totalTvl > 0 ? "up" : "neutral",
+        description: "Combined TVL for bridges matching the current dashboard filters.",
+      },
+      {
+        id: "assets",
+        label: "Monitored assets",
+        value: filteredAssets.length,
+        delta: `${improvingAssets} improving`,
+        trend:
+          improvingAssets > deterioratingAssets
+            ? "up"
+            : deterioratingAssets > improvingAssets
+              ? "down"
+              : "neutral",
+        description: "Assets with health data after asset, status, and time filters are applied.",
+      },
+      {
+        id: "bridges",
+        label: "Active bridges",
+        value: activeBridgeCount,
+        delta: `${filteredBridges.length - activeBridgeCount} down`,
+        trend: activeBridgeCount === filteredBridges.length ? "up" : "down",
+        description: "Bridges not currently marked down, scoped by bridge and favorite filters.",
+      },
+      {
+        id: "health",
+        label: "System health",
+        value: formatPercent(averageHealth),
+        delta: `${mismatchBridgeCount} mismatches`,
+        trend: averageHealth >= 80 ? "up" : averageHealth >= 50 ? "neutral" : "down",
+        description: "Average health score across filtered assets with bridge mismatch context.",
+      },
+    ],
+    [
+      activeBridgeCount,
+      averageHealth,
+      deterioratingAssets,
+      filteredAssets.length,
+      filteredBridges.length,
+      improvingAssets,
+      mismatchBridgeCount,
+      totalTvl,
+    ],
+  );
+  const drilldownContexts = useMemo<Record<string, DrilldownContext>>(
+    () => ({
+      tvl: {
+        id: "tvl",
+        title: "Total value locked",
+        subtitle: "Bridge TVL ranked by the current dashboard filters.",
+        metrics: [
+          { label: "Filtered TVL", value: formatCurrency(totalTvl) },
+          { label: "Bridge count", value: filteredBridges.length },
+        ],
+        rows: buildBridgeRows(filteredBridges),
+      },
+      assets: {
+        id: "assets",
+        title: "Monitored assets",
+        subtitle: "Health trend summary for filtered assets.",
+        metrics: [
+          { label: "Visible assets", value: filteredAssets.length },
+          { label: "Improving", value: improvingAssets },
+          { label: "Deteriorating", value: deterioratingAssets },
+        ],
+        rows: filteredAssets.slice(0, 8).map((asset) => ({
+          label: asset.symbol,
+          value: asset.health?.overallScore ?? "No score",
+          status: asset.health?.trend ?? "No trend",
+        })),
+      },
+      bridges: {
+        id: "bridges",
+        title: "Active bridges",
+        subtitle: "Operational status for filtered bridges.",
+        metrics: [
+          { label: "Active", value: activeBridgeCount },
+          { label: "Down", value: filteredBridges.length - activeBridgeCount },
+        ],
+        rows: buildBridgeRows(filteredBridges),
+      },
+      health: {
+        id: "health",
+        title: "System health",
+        subtitle: "Average asset health and high-mismatch bridges.",
+        metrics: [
+          { label: "Average health", value: formatPercent(averageHealth) },
+          { label: "High mismatch", value: mismatchBridgeCount },
+        ],
+        rows: filteredBridges
+          .filter((bridge) => bridge.mismatchPercentage > 1)
+          .slice(0, 8)
+          .map((bridge) => ({
+            label: bridge.name,
+            value: `${bridge.mismatchPercentage.toFixed(3)}%`,
+            status: bridge.status,
+          })),
+      },
+    }),
+    [
+      activeBridgeCount,
+      averageHealth,
+      deterioratingAssets,
+      filteredAssets,
+      filteredBridges,
+      improvingAssets,
+      mismatchBridgeCount,
+      totalTvl,
+    ],
+  );
+  const activeDrilldown = activeDrilldownId ? drilldownContexts[activeDrilldownId] ?? null : null;
+
+  function setDrilldown(id: string | null) {
+    const params = new URLSearchParams(location.search);
+    if (id) {
+      params.set(DRILLDOWN_PARAM, id);
+    } else {
+      params.delete(DRILLDOWN_PARAM);
+    }
+    navigate({ search: params.toString() }, { replace: false });
+  }
+
+  const currentShareUrl =
+    typeof window === "undefined"
+      ? `https://bridge-watch.local${location.pathname}${location.search}`
+      : window.location.href;
 
   return (
     <div className="space-y-8">
@@ -265,19 +443,13 @@ export default function Dashboard() {
             >
               Export data
             </button>
-            {dashboardViews.map((view) => (
-              <button
-                key={view.id}
-                type="button"
-                onClick={() => dashboard.setView(view.id)}
-                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  dashboard.state.view === view.id
-                    ? "border-stellar-blue bg-stellar-blue/15 text-white"
-                    : "border-stellar-border text-stellar-text-secondary hover:border-stellar-blue hover:text-white"
-                }`}
-                aria-pressed={dashboard.state.view === view.id}
-                title={view.description}
-                />))}
+            <button
+              type="button"
+              onClick={() => setSharingOpen(true)}
+              className="rounded-full border border-stellar-border px-4 py-2 text-sm text-white transition-colors hover:bg-stellar-border"
+            >
+              Share view
+            </button>
             <Tabs
               activeTab={dashboard.state.view}
               onTabChange={(id) => dashboard.setView(id as DashboardView)}
@@ -323,6 +495,13 @@ export default function Dashboard() {
       </div>
 
       {/* Overview Stats */}
+      <KpiBanner
+        items={kpiItems}
+        loading={assetsLoading || bridgesLoading}
+        layout={dashboard.state.view === "overview" ? "expanded" : "compact"}
+        onDrilldown={(item) => setDrilldown(item.id)}
+      />
+
       <section aria-labelledby="overview-stats">
         <h2 id="overview-stats" className="text-xl font-semibold text-white mb-4">
           Overview
@@ -421,18 +600,26 @@ export default function Dashboard() {
           ) : filteredBridges.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBridges.map((bridge) => (
-                <BridgeStatusCard
-                  key={bridge.name}
-                  {...bridge}
-                  topRight={
-                    <FavoriteTagChip
-                      compact
-                      label={bridge.name}
-                      active={favoriteBridges.includes(bridge.name)}
-                      onToggle={() => toggleFavoriteBridge(bridge.name)}
-                    />
-                  }
-                />
+                <div key={bridge.name} className="space-y-2">
+                  <BridgeStatusCard
+                    {...bridge}
+                    topRight={
+                      <FavoriteTagChip
+                        compact
+                        label={bridge.name}
+                        active={favoriteBridges.includes(bridge.name)}
+                        onToggle={() => toggleFavoriteBridge(bridge.name)}
+                      />
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setDrilldown("bridges")}
+                    className="w-full rounded-md border border-stellar-border px-3 py-2 text-xs font-medium text-stellar-text-secondary transition-colors hover:border-stellar-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-stellar-blue"
+                  >
+                    Inspect bridge details
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
@@ -453,6 +640,17 @@ export default function Dashboard() {
         onClose={() => setExportPickerOpen(false)}
         availableAssets={assetsWithHealth ?? []}
         availableBridges={bridgesData?.bridges ?? []}
+      />
+      <DashboardSharingModal
+        open={sharingOpen}
+        currentUrl={currentShareUrl}
+        onClose={() => setSharingOpen(false)}
+      />
+      <DrilldownDrawer
+        open={Boolean(activeDrilldown)}
+        context={activeDrilldown}
+        onClose={() => setDrilldown(null)}
+        onBack={() => setDrilldown(null)}
       />
     </div>
   );
