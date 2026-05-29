@@ -18,6 +18,7 @@ pub mod source_trust;
 
 pub mod rate_limiter;
 pub mod migration;
+pub mod state_export;
 
 #[cfg(test)]
 pub mod asset_registry;
