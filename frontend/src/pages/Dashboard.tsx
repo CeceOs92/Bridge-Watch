@@ -18,6 +18,8 @@ import AssetDiscoverySection from "../components/dashboard/AssetDiscoverySection
 import FavoriteTagChip from "../components/favorites/FavoriteTagChip";
 import AssetFilterPanel from "../components/Filters/AssetFilterPanel";
 import FilterPresetsMenu from "../components/Filters/FilterPresetsMenu";
+import DashboardTour from "../components/dashboard/DashboardTour";
+import { useDashboardTour, type TourStep } from "../hooks/useDashboardTour";
 import { useFavorites } from "../hooks/useFavorites";
 import ExportPickerDialog from "../components/ExportPickerDialog";
 import { Tabs, TabList, Tab, TabPanel } from "../components/Tabs";
@@ -41,6 +43,37 @@ type BridgeStatusFilter = "all" | "healthy" | "degraded" | "down" | "unknown";
 const VIEW_PARAM = "dashboard_view";
 const BRIDGE_STATUS_PARAM = "dashboard_bridge_status";
 const DRILLDOWN_PARAM = "drilldown";
+
+const dashboardTourSteps: TourStep[] = [
+  {
+    id: "toolbar",
+    target: '[data-tour="toolbar"]',
+    title: "Toolbar actions",
+    body: "Save filter presets, refresh data, export, and share the current view from here.",
+    placement: "bottom",
+  },
+  {
+    id: "filters",
+    target: '[data-tour="filters"]',
+    title: "Filters",
+    body: "Narrow the dashboard by assets, bridges, status, and time range. Active filters are encoded in the URL.",
+    placement: "right",
+  },
+  {
+    id: "kpis",
+    target: '[data-tour="kpis"]',
+    title: "Key metrics",
+    body: "Live KPIs summarise total value locked, monitored assets, active bridges, and system health. Inspect any card to drill down.",
+    placement: "bottom",
+  },
+  {
+    id: "status-cards",
+    target: '[data-tour="status-cards"]',
+    title: "Status at a glance",
+    body: "These cards highlight the assets and bridges that need attention right now.",
+    placement: "top",
+  },
+];
 
 const dashboardViews: Array<{ id: DashboardView; label: string; description: string }> = [
   { id: "overview", label: "Overview", description: "Assets and bridges together" },
@@ -183,6 +216,7 @@ export default function Dashboard() {
     setPresetShared,
     deletePreset,
   } = useDashboardFilters();
+  const tour = useDashboardTour({ stepCount: dashboardTourSteps.length });
   const pullToRefresh = usePullToRefresh({
     enabled: true,
     onRefresh: async () => {
@@ -476,21 +510,23 @@ export default function Dashboard() {
       />
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <AssetFilterPanel
-          assets={availableAssets}
-          bridges={availableBridges}
-          filters={filters}
-          savedPresets={savedPresets}
-          hasActiveFilters={hasActiveFilters}
-          onToggleAsset={toggleAsset}
-          onToggleBridge={toggleBridge}
-          onStatusChange={setStatus}
-          onTimeRangeChange={setTimeRange}
-          onClearAll={clearAll}
-          onSavePreset={savePreset}
-          onApplyPreset={applyPreset}
-          onDeletePreset={deletePreset}
-        />
+        <div data-tour="filters" className="w-full md:w-80 md:shrink-0">
+          <AssetFilterPanel
+            assets={availableAssets}
+            bridges={availableBridges}
+            filters={filters}
+            savedPresets={savedPresets}
+            hasActiveFilters={hasActiveFilters}
+            onToggleAsset={toggleAsset}
+            onToggleBridge={toggleBridge}
+            onStatusChange={setStatus}
+            onTimeRangeChange={setTimeRange}
+            onClearAll={clearAll}
+            onSavePreset={savePreset}
+            onApplyPreset={applyPreset}
+            onDeletePreset={deletePreset}
+          />
+        </div>
 
         <main className="flex-1 space-y-8 min-w-0">
           <div className="space-y-4 rounded-2xl border border-stellar-border bg-gradient-to-br from-stellar-card via-stellar-card to-stellar-dark/40 p-6">
@@ -503,7 +539,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div data-tour="toolbar" className="flex flex-wrap items-center gap-2">
             <FilterPresetsMenu
               filters={filters}
               presets={savedPresets}
@@ -513,6 +549,13 @@ export default function Dashboard() {
               onDeletePreset={deletePreset}
               onToggleShared={setPresetShared}
             />
+            <button
+              type="button"
+              onClick={tour.start}
+              className="rounded-full border border-stellar-border px-4 py-2 text-sm text-white transition-colors hover:bg-stellar-border"
+            >
+              {tour.completed ? "Replay tour" : "Take a tour"}
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -581,19 +624,23 @@ export default function Dashboard() {
       </div>
 
       {/* Overview Stats */}
-      <KpiBanner
-        items={kpiItems}
-        loading={assetsLoading || bridgesLoading}
-        layout={dashboard.state.view === "overview" ? "expanded" : "compact"}
-        onDrilldown={(item) => setDrilldown(item.id)}
-        onInspectMetric={(item) => setInspectedMetricId(item.id)}
-      />
+      <div data-tour="kpis">
+        <KpiBanner
+          items={kpiItems}
+          loading={assetsLoading || bridgesLoading}
+          layout={dashboard.state.view === "overview" ? "expanded" : "compact"}
+          onDrilldown={(item) => setDrilldown(item.id)}
+          onInspectMetric={(item) => setInspectedMetricId(item.id)}
+        />
+      </div>
 
-      <InlineStatusCards
-        assets={filteredAssets}
-        bridges={filteredBridges}
-        loading={assetsLoading || bridgesLoading}
-      />
+      <div data-tour="status-cards">
+        <InlineStatusCards
+          assets={filteredAssets}
+          bridges={filteredBridges}
+          loading={assetsLoading || bridgesLoading}
+        />
+      </div>
 
       <section aria-labelledby="overview-stats">
         <h2 id="overview-stats" className="text-xl font-semibold text-white mb-4">
@@ -758,6 +805,14 @@ export default function Dashboard() {
           assetsWithHealth?.find((a) => a.symbol === insightsTraySymbol)?.name ?? null
         }
         onClose={closeInsightsTray}
+      />
+      <DashboardTour
+        steps={dashboardTourSteps}
+        activeStep={tour.activeStep}
+        onNext={tour.next}
+        onPrev={tour.prev}
+        onSkip={tour.skip}
+        onFinish={tour.finish}
       />
     </div>
   );
