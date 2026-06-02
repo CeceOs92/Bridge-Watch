@@ -48,6 +48,30 @@ export interface BridgeStats {
   uptime30d: number;
 }
 
+/**
+ * Bridge summary data combining status and performance metrics
+ * for display in summary card components
+ */
+export interface BridgeSummary {
+  id: string;
+  name: string;
+  status: "healthy" | "degraded" | "down" | "unknown";
+  /** Coverage metric: bridge uptime percentage (0-100) */
+  coverage: number;
+  /** Performance metric: average transfer time in milliseconds */
+  performance: number;
+  /** Total value locked in the bridge */
+  totalValueLocked: number;
+  /** Supply on Stellar */
+  supplyOnStellar: number;
+  /** Supply on source chain */
+  supplyOnSource: number;
+  /** Mismatch percentage between supplies */
+  mismatchPercentage: number;
+  /** Timestamp of last data update */
+  lastUpdated: string;
+}
+
 // Transaction History types
 export type TransactionStatus = "pending" | "completed" | "failed";
 
