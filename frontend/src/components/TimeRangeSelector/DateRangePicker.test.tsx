@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DateRangePicker from "./DateRangePicker";
 import type { TimeRangeSelection } from "../../utils/timeRange";
@@ -370,7 +370,6 @@ describe("DateRangePicker", () => {
     });
 
     it("closes picker on Escape key", async () => {
-      const user = userEvent.setup();
       const triggerRef = { current: document.createElement("button") };
 
       render(

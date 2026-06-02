@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { getSystemStatus, type SystemStatus } from "../services/api";
+import { getSystemStatus } from "../services/api";
 
 const DISMISSED_KEY = "maintenance-banner-dismissed";
 

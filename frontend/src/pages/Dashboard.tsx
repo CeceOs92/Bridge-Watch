@@ -25,7 +25,13 @@ import KpiBanner, { type KpiBannerItem } from "../components/dashboard/KpiBanner
 import DrilldownDrawer, {
   type DrilldownContext,
 } from "../components/dashboard/DrilldownDrawer";
+import InlineStatusCards from "../components/dashboard/InlineStatusCards";
+import MetricsInspectorDrawer, {
+  type MetricInspectorMetadata,
+} from "../components/dashboard/MetricsInspectorDrawer";
 import DashboardSharingModal from "../components/dashboard/DashboardSharingModal";
+import AssetInsightsTray from "../components/asset/AssetInsightsTray";
+import { useUIStore, selectInsightsTray } from "../stores/uiStore";
 import type { AssetWithHealth, Bridge, FilterStatus } from "../types";
 
 type DashboardView = "overview" | "assets" | "bridges";
@@ -146,6 +152,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [exportPickerOpen, setExportPickerOpen] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
+  const [inspectedMetricId, setInspectedMetricId] = useState<string | null>(null);
+  const { open: insightsTrayOpen, symbol: insightsTraySymbol, closeInsightsTray } =
+    useUIStore(selectInsightsTray);
   const {
     data: assetsWithHealth,
     isLoading: assetsLoading,
@@ -190,6 +199,13 @@ export default function Dashboard() {
       (a, b) => a.localeCompare(b),
     );
   }, [bridgesData?.bridges]);
+  const activitySourceOptions = useMemo(
+    () => [
+      ...availableAssets.map((symbol) => `asset:${symbol}`),
+      ...availableBridges.map((name) => `bridge:${name}`),
+    ],
+    [availableAssets, availableBridges],
+  );
 
   const filteredAssets = useMemo(
     () => filterAssets(assetsWithHealth ?? [], filters),
@@ -372,7 +388,65 @@ export default function Dashboard() {
       totalTvl,
     ],
   );
+  const metricInspectorMetadata = useMemo<Record<string, MetricInspectorMetadata>>(
+    () => ({
+      tvl: {
+        id: "tvl",
+        label: "Total value locked",
+        definition:
+          "The sum of total value locked across bridges that match the current dashboard bridge, favorite, and view filters.",
+        source:
+          "Bridge records from the bridges API, using each bridge totalValueLocked field after client-side filters are applied.",
+        context: `${filteredBridges.length} bridges are included in the current view for a combined ${formatCurrency(totalTvl)}.`,
+        refresh:
+          "Bridge data is queried by React Query and refreshes with the dashboard data cycle or manual refresh.",
+      },
+      assets: {
+        id: "assets",
+        label: "Monitored assets",
+        definition:
+          "The number of assets with health records visible after asset, status, and time filters are applied.",
+        source:
+          "Asset and health-score records from the assets-with-health API, scoped through dashboard filter state.",
+        context: `${filteredAssets.length} assets are visible, with ${improvingAssets} improving and ${deterioratingAssets} deteriorating.`,
+        refresh:
+          "Asset health refreshes automatically and can be refreshed manually from the dashboard toolbar.",
+      },
+      bridges: {
+        id: "bridges",
+        label: "Active bridges",
+        definition: "The count of filtered bridges that are not currently reported as down.",
+        source:
+          "Bridge status records from the bridges API, filtered by bridge status, favorites, and selected bridges.",
+        context: `${activeBridgeCount} of ${filteredBridges.length} filtered bridges are active.`,
+        refresh: "Bridge statuses refresh with the dashboard query cadence and pull-to-refresh action.",
+      },
+      health: {
+        id: "health",
+        label: "System health",
+        definition:
+          "The arithmetic average of visible asset health scores, with bridge mismatch count shown as operational context.",
+        source:
+          "Health-score payloads from monitored assets, combined with bridge mismatch percentages from bridge records.",
+        context: `Average health is ${formatPercent(averageHealth)} and ${mismatchBridgeCount} bridges exceed the mismatch threshold.`,
+        refresh: "Health data follows the asset health query cadence and WebSocket updates where available.",
+      },
+    }),
+    [
+      activeBridgeCount,
+      averageHealth,
+      deterioratingAssets,
+      filteredAssets.length,
+      filteredBridges.length,
+      improvingAssets,
+      mismatchBridgeCount,
+      totalTvl,
+    ],
+  );
   const activeDrilldown = activeDrilldownId ? drilldownContexts[activeDrilldownId] ?? null : null;
+  const inspectedMetric = inspectedMetricId
+    ? metricInspectorMetadata[inspectedMetricId] ?? null
+    : null;
 
   function setDrilldown(id: string | null) {
     const params = new URLSearchParams(location.search);
@@ -500,6 +574,13 @@ export default function Dashboard() {
         loading={assetsLoading || bridgesLoading}
         layout={dashboard.state.view === "overview" ? "expanded" : "compact"}
         onDrilldown={(item) => setDrilldown(item.id)}
+        onInspectMetric={(item) => setInspectedMetricId(item.id)}
+      />
+
+      <InlineStatusCards
+        assets={filteredAssets}
+        bridges={filteredBridges}
+        loading={assetsLoading || bridgesLoading}
       />
 
       <section aria-labelledby="overview-stats">
@@ -532,7 +613,7 @@ export default function Dashboard() {
             value={
               bridgesLoading
                 ? "--"
-                : bridgesData?.bridges.filter((b: any) => b.status !== "down").length || 0
+                : bridgesData?.bridges.filter((b: { status: string }) => b.status !== "down").length || 0
             }
             loading={bridgesLoading}
             icon="🌉"
@@ -584,6 +665,7 @@ export default function Dashboard() {
           defaultMode="compact"
           showFilters={true}
           showHeader={true}
+          sourceOptions={activitySourceOptions}
         />
       </section>
 
@@ -651,6 +733,19 @@ export default function Dashboard() {
         context={activeDrilldown}
         onClose={() => setDrilldown(null)}
         onBack={() => setDrilldown(null)}
+      />
+      <MetricsInspectorDrawer
+        open={Boolean(inspectedMetric)}
+        metric={inspectedMetric}
+        onClose={() => setInspectedMetricId(null)}
+      />
+      <AssetInsightsTray
+        open={insightsTrayOpen}
+        symbol={insightsTraySymbol}
+        assetName={
+          assetsWithHealth?.find((a) => a.symbol === insightsTraySymbol)?.name ?? null
+        }
+        onClose={closeInsightsTray}
       />
     </div>
   );

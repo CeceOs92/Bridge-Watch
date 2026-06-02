@@ -14,6 +14,7 @@ interface KpiBannerProps {
   loading?: boolean;
   layout?: "compact" | "expanded";
   onDrilldown: (item: KpiBannerItem) => void;
+  onInspectMetric?: (item: KpiBannerItem) => void;
 }
 
 const trendClasses: Record<KpiTrendDirection, string> = {
@@ -46,6 +47,7 @@ export default function KpiBanner({
   loading = false,
   layout = "compact",
   onDrilldown,
+  onInspectMetric,
 }: KpiBannerProps) {
   const expanded = layout === "expanded";
 
@@ -75,32 +77,47 @@ export default function KpiBanner({
               <KpiSkeleton key={index} expanded={expanded} />
             ))
           : items.map((item) => (
-              <button
+              <article
                 key={item.id}
-                type="button"
-                onClick={() => onDrilldown(item)}
-                className="group min-h-32 rounded-lg border border-stellar-border bg-stellar-card p-4 text-left transition-colors hover:border-stellar-blue focus:outline-none focus:ring-2 focus:ring-stellar-blue"
-                aria-label={`Open ${item.label} drilldown`}
+                className="group min-h-32 rounded-lg border border-stellar-border bg-stellar-card p-4 transition-colors hover:border-stellar-blue"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-medium uppercase text-stellar-text-secondary">
                     {item.label}
                   </span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${trendClasses[item.trend]}`}
-                  >
-                    <span aria-hidden="true">{trendGlyph[item.trend]}</span>
-                    {item.delta}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${trendClasses[item.trend]}`}
+                    >
+                      <span aria-hidden="true">{trendGlyph[item.trend]}</span>
+                      {item.delta}
+                    </span>
+                    {onInspectMetric ? (
+                      <button
+                        type="button"
+                        onClick={() => onInspectMetric(item)}
+                        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-stellar-text-secondary hover:bg-stellar-dark hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stellar-blue"
+                        aria-label={`Explain ${item.label}`}
+                        title={`Explain ${item.label}`}
+                      >
+                        i
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="mt-3 text-2xl font-bold text-white">{item.value}</div>
                 {expanded ? (
                   <p className="mt-3 text-sm text-stellar-text-secondary">{item.description}</p>
                 ) : null}
-                <span className="mt-3 inline-flex text-xs font-medium text-stellar-blue group-hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => onDrilldown(item)}
+                  className="mt-3 inline-flex min-h-10 items-center rounded-md text-xs font-medium text-stellar-blue group-hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stellar-blue"
+                  aria-label={`Open ${item.label} drilldown`}
+                >
                   Inspect
-                </span>
-              </button>
+                </button>
+              </article>
             ))}
       </div>
     </section>

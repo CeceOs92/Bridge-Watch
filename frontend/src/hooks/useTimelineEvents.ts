@@ -9,16 +9,13 @@ import type {
   TimelineFilters,
   TimelineSortOrder,
   BridgeTimelineEvent,
-  AssetTimelineEvent,
   AlertTimelineEvent,
-  TransactionTimelineEvent,
   HealthTimelineEvent,
 } from "../types/timeline";
 import type {
   WsBridgeMessage,
   WsHealthMessage,
   WsAlertMessage,
-  BridgeTransaction,
 } from "../types";
 
 const MAX_EVENTS = 100;
@@ -68,24 +65,6 @@ function convertAlertMessage(msg: WsAlertMessage): AlertTimelineEvent {
     assetSymbol: msg.symbol,
     bridgeName: msg.bridgeName,
     status: "active",
-  };
-}
-
-function convertTransactionMessage(tx: BridgeTransaction): TransactionTimelineEvent {
-  return {
-    id: `tx-${tx.id}`,
-    type: "transaction",
-    timestamp: tx.timestamp,
-    title: `${tx.status} transaction on ${tx.bridge}`,
-    description: `${tx.amount} ${tx.asset} from ${tx.sourceChain} to ${tx.destinationChain}`,
-    status: tx.status,
-    txHash: tx.txHash,
-    bridge: tx.bridge,
-    asset: tx.asset,
-    amount: tx.amount,
-    sourceChain: tx.sourceChain,
-    destinationChain: tx.destinationChain,
-    severity: tx.status === "failed" ? "critical" : tx.status === "pending" ? "warning" : "info",
   };
 }
 

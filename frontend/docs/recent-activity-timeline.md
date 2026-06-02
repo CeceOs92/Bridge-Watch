@@ -9,6 +9,7 @@ The Recent Activity Timeline component provides a chronological view of bridge, 
 - **Chronological Ordering**: Events are displayed in reverse chronological order (newest first) by default
 - **Event Type Icons**: Visual indicators for different event types (bridge, asset, alert, transaction, health)
 - **Filtering**: Filter by event type, severity, status, asset symbol, bridge name, and search query
+- **Persistent Activity Bar**: Top-level time, type, source, and search filters persist across reloads
 - **Display Modes**: Toggle between compact and expanded views
 - **Real-time Updates**: Automatically receives and displays new events via WebSocket
 - **Loading Skeletons**: Smooth loading states while fetching data
@@ -64,7 +65,7 @@ Icon component for different event types with severity indicators.
 
 ### TimelineFilters
 
-Filter controls for the timeline.
+Advanced filter controls for the timeline.
 
 **Props:**
 - `filters: Partial<TimelineFilters>` - Current filter state
@@ -110,13 +111,18 @@ Events are converted from WebSocket messages to timeline events using the `useTi
 
 Filters can be applied for:
 
+- **Time Range**: All time, last hour, last 24 hours, or last 7 days
 - **Event Types**: Bridge, Asset, Alert, Transaction, Health
+- **Source**: Asset or bridge source selector
 - **Severity**: Info, Warning, Critical
 - **Status**: Active, Resolved, Pending, Completed, Failed
 - **Search Query**: Text search across title and description
 - **Asset Symbol**: Filter by specific asset
 - **Bridge Name**: Filter by specific bridge
 - **Date Range**: Filter by date range (future enhancement)
+
+The top activity filter bar stores its state in local storage under
+`bridge-watch:activity-filters`.
 
 ## Accessibility
 

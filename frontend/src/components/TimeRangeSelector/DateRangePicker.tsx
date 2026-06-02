@@ -283,8 +283,8 @@ export default function DateRangePicker({
           <p className="text-xs font-medium text-stellar-text-secondary">Recent</p>
           <div className="flex flex-wrap gap-2">
             {recentRanges.map((range, index) => {
-              const startDate = new Date(range.start);
-              const endDate = new Date(range.end);
+              const startDate = new Date(range.start ?? "");
+              const endDate = new Date(range.end ?? "");
               const label = `${startDate.toLocaleDateString()} → ${endDate.toLocaleDateString()}`;
 
               return (

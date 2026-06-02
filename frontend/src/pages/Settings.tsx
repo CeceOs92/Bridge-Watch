@@ -7,6 +7,13 @@ import { usePreferences } from "../context/PreferencesContext";
 import { useToast } from "../context/ToastContext";
 import { useNotificationContext } from "../hooks/useNotificationContext";
 import { useThemeStore, selectDensity } from "../stores/themeStore";
+import { Tabs, TabList, Tab, TabPanel } from "../components/Tabs";
+
+const refreshOptions = [
+  { value: 30000, label: "30s" },
+  { value: 60000, label: "1m" },
+  { value: 120000, label: "2m" },
+] as const;
 
 export default function Settings() {
   const { prefs, setPrefs } = usePreferences();
@@ -126,7 +133,7 @@ export default function Settings() {
                 className="rounded-md border border-stellar-border bg-stellar-dark px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-stellar-blue"
                 value={density}
                 onChange={(e) => {
-                  setDensity(e.target.value as any);
+                  setDensity(e.target.value as "compact" | "comfortable" | "spacious");
                   showSuccess("Density preference updated.");
                 }}
               >

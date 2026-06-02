@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNotificationContext } from "../hooks/useNotificationContext";
-import { usePreferences } from "../context/PreferencesContext";
 import { useToast } from "../context/ToastContext";
 
 type Channel = "in_app" | "email" | "webhook";

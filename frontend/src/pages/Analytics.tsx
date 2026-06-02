@@ -1,17 +1,35 @@
 import { useState } from "react";
 import ColorPreviewTool from "../components/ColorPreviewTool";
 import { MetricsDrilldown } from "../components/MetricsDrilldown";
+import SnapshotCard from "../components/analytics/SnapshotCard";
+import BridgeComparison from "../components/analytics/BridgeComparison";
+import type { BridgeAnalytics } from "../hooks/useAnalytics";
+
+interface SnapshotState {
+  title: string;
+  timestamp: string;
+}
 
 export default function Analytics() {
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+  const [snapshot, setSnapshot] = useState<SnapshotState | null>(null);
+  const [isLoading] = useState(false);
+  const [bridgeData] = useState<BridgeAnalytics[]>([]);
+
+  const handleCaptureSnapshot = () => {
+    setSnapshot({
+      title: "Bridge Analytics Snapshot",
+      timestamp: new Date().toLocaleString(),
+    });
+  };
 
   const metrics = [
-    { id: "tvl", label: "Total Value Locked", value: "$12.5M", trend: { value: "+12%", direction: "up" }, icon: "💰" },
-    { id: "assets", label: "Monitored Assets", value: "42", trend: { value: "+3", direction: "up" }, icon: "📊" },
-    { id: "bridges", label: "Active Bridges", value: "8/10", trend: { value: "2 down", direction: "down" }, icon: "🌉" },
-    { id: "health", label: "System Health", value: "85%", trend: { value: "+5%", direction: "up" }, icon: "❤️" },
-    { id: "alerts", label: "Active Alerts", value: "3", trend: { value: "-2", direction: "down" }, icon: "⚠️" },
-    { id: "volume", label: "24h Volume", value: "$4.2M", trend: { value: "+8%", direction: "up" }, icon: "📈" },
+    { id: "tvl", label: "Total Value Locked", value: "$12.5M", trend: { value: "+12%", direction: "up" as const }, icon: "💰" },
+    { id: "assets", label: "Monitored Assets", value: "42", trend: { value: "+3", direction: "up" as const }, icon: "📊" },
+    { id: "bridges", label: "Active Bridges", value: "8/10", trend: { value: "2 down", direction: "down" as const }, icon: "🌉" },
+    { id: "health", label: "System Health", value: "85%", trend: { value: "+5%", direction: "up" as const }, icon: "❤️" },
+    { id: "alerts", label: "Active Alerts", value: "3", trend: { value: "-2", direction: "down" as const }, icon: "⚠️" },
+    { id: "volume", label: "24h Volume", value: "$4.2M", trend: { value: "+8%", direction: "up" as const }, icon: "📈" },
   ];
 
   return (

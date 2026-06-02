@@ -3,10 +3,15 @@
  * Displays a chronological timeline of bridge, asset, and alert activity
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useTimelineEvents } from "../../hooks/useTimelineEvents";
 import TimelineEventCard from "./TimelineEventCard";
-import TimelineFilters from "./TimelineFilters";
+import ActivityFiltersBar from "./ActivityFiltersBar";
+import {
+  DEFAULT_ACTIVITY_FILTER_STATE,
+  toTimelineFilters,
+  type ActivityFilterState,
+} from "./activityFilters";
 import type {
   TimelineFilters as TimelineFiltersType,
   TimelineDisplayMode,
@@ -20,6 +25,34 @@ interface RecentActivityTimelineProps {
   showFilters?: boolean;
   showHeader?: boolean;
   className?: string;
+  sourceOptions?: string[];
+}
+
+const ACTIVITY_FILTERS_STORAGE_KEY = "bridge-watch:activity-filters";
+
+function buildInitialFilters(
+  defaults: Partial<TimelineFiltersType>,
+): ActivityFilterState {
+  try {
+    const raw = localStorage.getItem(ACTIVITY_FILTERS_STORAGE_KEY);
+    if (raw) {
+      const stored = JSON.parse(raw) as Partial<ActivityFilterState>;
+      return { ...DEFAULT_ACTIVITY_FILTER_STATE, ...stored };
+    }
+  } catch {
+    // Ignore malformed stored filters and fall back to defaults.
+  }
+
+  return {
+    ...DEFAULT_ACTIVITY_FILTER_STATE,
+    type: defaults.types?.[0] ?? "all",
+    source: defaults.assetSymbol
+      ? `asset:${defaults.assetSymbol}`
+      : defaults.bridgeName
+        ? `bridge:${defaults.bridgeName}`
+        : "all",
+    searchQuery: defaults.searchQuery ?? "",
+  };
 }
 
 export default function RecentActivityTimeline({
@@ -29,10 +62,17 @@ export default function RecentActivityTimeline({
   showFilters = true,
   showHeader = true,
   className = "",
+  sourceOptions = [],
 }: RecentActivityTimelineProps) {
-  const [filters, setFilters] = useState<Partial<TimelineFiltersType>>(defaultFilters);
+  const [activityFilters, setActivityFilters] = useState<ActivityFilterState>(() =>
+    buildInitialFilters(defaultFilters),
+  );
   const [displayMode, setDisplayMode] = useState<TimelineDisplayMode>(defaultMode);
   const [sortOrder, setSortOrder] = useState<TimelineSortOrder>("newest");
+  const timelineFilters = useMemo(
+    () => toTimelineFilters(activityFilters),
+    [activityFilters],
+  );
 
   const {
     events,
@@ -44,18 +84,22 @@ export default function RecentActivityTimeline({
     clearEvents,
     removeEvent,
   } = useTimelineEvents({
-    filters,
+    filters: timelineFilters,
     sortOrder,
     autoUpdate: true,
     maxEvents,
   });
 
-  const handleFiltersChange = useCallback((newFilters: Partial<TimelineFiltersType>) => {
-    setFilters(newFilters);
-  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACTIVITY_FILTERS_STORAGE_KEY, JSON.stringify(activityFilters));
+    } catch {
+      // Activity filters still work without persistence.
+    }
+  }, [activityFilters]);
 
   const handleClearFilters = useCallback(() => {
-    setFilters({});
+    setActivityFilters(DEFAULT_ACTIVITY_FILTER_STATE);
   }, []);
 
   const toggleSortOrder = useCallback(() => {
@@ -147,10 +191,11 @@ export default function RecentActivityTimeline({
 
       {/* Filters */}
       {showFilters && (
-        <TimelineFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
+        <ActivityFiltersBar
+          value={activityFilters}
+          sourceOptions={sourceOptions}
+          onChange={setActivityFilters}
+          onReset={handleClearFilters}
         />
       )}
 
