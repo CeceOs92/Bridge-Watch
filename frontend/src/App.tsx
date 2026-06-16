@@ -19,6 +19,7 @@ const Transactions = lazy(() => import("./pages/Transactions"));
 const ApiKeys = lazy(() => import("./pages/ApiKeys"));
 const AlertRoutingAdmin = lazy(() => import("./pages/AlertRoutingAdmin"));
 const SupplyChain = lazy(() => import("./pages/SupplyChain"));
+const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 const Help = lazy(() => import("./pages/Help"));
 const ReleaseNotes = lazy(() => import("./pages/ReleaseNotes"));
@@ -63,6 +64,7 @@ function App() {
               <Route path="/admin/api-keys" element={<ApiKeys />} />
               <Route path="/admin/alert-routing" element={<AlertRoutingAdmin />} />
               <Route path="/supply-chain" element={<SupplyChain />} />
+              <Route path="/reconciliation" element={<Reconciliation />} />
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/help" element={<Help />} />
               <Route path="/release-notes" element={<ReleaseNotes />} />

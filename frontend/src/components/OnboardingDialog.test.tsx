@@ -9,7 +9,7 @@ describe("OnboardingDialog", () => {
     const onClose = vi.fn();
     const onComplete = vi.fn();
 
-    const { asFragment, container } = render(
+    const { container } = render(
       <MemoryRouter>
         <OnboardingDialog open onClose={onClose} onComplete={onComplete} />
       </MemoryRouter>
@@ -32,4 +32,3 @@ describe("OnboardingDialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
-

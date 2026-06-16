@@ -8,7 +8,29 @@ import type {
   VenueLiquidity,
   LiquiditySnapshot,
   TradingPair,
+  OrderBookLevel,
 } from "../types/liquidity";
+
+interface RawPriceLevel {
+  priceImpact: number;
+  totalAmount: number;
+}
+
+interface RawLiquiditySource {
+  dex: string;
+  totalLiquidity: number;
+  bidDepth: number;
+  askDepth: number;
+  priceLevels?: RawPriceLevel[];
+}
+
+interface RawLiquidityData {
+  totalLiquidity?: number;
+  sources?: RawLiquiditySource[];
+  bestBid?: { price?: number };
+  bestAsk?: { price?: number };
+  lastUpdated?: string;
+}
 
 // Helper function to round to 7 decimal places
 function round7(num: number): number {
@@ -50,18 +72,18 @@ export function useLiquidity(pair: string): LiquidityState {
   });
 
   // Helper function to process the raw backend data and return new state parts
-  const processLiquidityData = useCallback((raw: any) => {
+  const processLiquidityData = useCallback((raw: RawLiquidityData | null | undefined) => {
     if (!raw) return null;
 
     const totalLiquidity = raw.totalLiquidity || 0;
     const sources = raw.sources || [];
 
     // 1. Map venues and calculate shares
-    const venues: VenueLiquidity[] = sources.map((source: any) => {
+    const venues: VenueLiquidity[] = sources.map((source) => {
       // Map "StellarX AMM" -> "StellarX" to match the frontend types
       const venue = source.dex === "StellarX AMM" ? "StellarX" : source.dex;
       return {
-        venue,
+        venue: venue as VenueLiquidity["venue"],
         totalLiquidity: round7(source.totalLiquidity),
         bidDepth: round7(source.bidDepth),
         askDepth: round7(source.askDepth),
@@ -74,31 +96,31 @@ export function useLiquidity(pair: string): LiquidityState {
     const bestAskPrice = (raw.bestAsk?.price && raw.bestAsk.price !== Infinity) ? raw.bestAsk.price : bestBidPrice;
     const midPrice = (bestBidPrice + bestAskPrice) / 2 || 1;
 
-    const bids: any[] = [];
-    const asks: any[] = [];
+    const bids: OrderBookLevel[] = [];
+    const asks: OrderBookLevel[] = [];
 
-    sources.forEach((source: any) => {
+    sources.forEach((source) => {
       const venue = source.dex === "StellarX AMM" ? "StellarX" : source.dex;
       const levels = source.priceLevels || [];
       // First 4 are bids, next 4 are asks
       const bidLevels = levels.slice(0, 4);
       const askLevels = levels.slice(4, 8);
 
-      bidLevels.forEach((level: any) => {
+      bidLevels.forEach((level) => {
         const price = bestBidPrice * (1 - level.priceImpact);
         bids.push({
           price: round7(price),
           volume: round7(level.totalAmount),
-          venue,
+          venue: venue as OrderBookLevel["venue"],
         });
       });
 
-      askLevels.forEach((level: any) => {
+      askLevels.forEach((level) => {
         const price = bestAskPrice * (1 + level.priceImpact);
         asks.push({
           price: round7(price),
           volume: round7(level.totalAmount),
-          venue,
+          venue: venue as OrderBookLevel["venue"],
         });
       });
     });
@@ -158,8 +180,11 @@ export function useLiquidity(pair: string): LiquidityState {
   // 2. Subscribe to WebSocket channel
   // Even if the backend does not currently broadcast, we implement it for future-proofing
   // and match the requirements.
-  useWebSocket(`liquidity:${symbol}`, (wsData: any) => {
-    const rawData = wsData?.data || wsData;
+  useWebSocket(`liquidity:${symbol}`, (wsData: unknown) => {
+    const rawData =
+      wsData && typeof wsData === "object" && "data" in wsData
+        ? (wsData as { data?: RawLiquidityData }).data
+        : (wsData as RawLiquidityData);
     const processed = processLiquidityData(rawData);
     if (processed) {
       setDerivedState({

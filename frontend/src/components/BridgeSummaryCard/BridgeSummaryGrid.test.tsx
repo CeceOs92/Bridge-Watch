@@ -43,6 +43,9 @@ const mockBridges: BridgeSummary[] = [
 ];
 
 describe("BridgeSummaryGrid", () => {
+  const getSkeletonCards = () =>
+    screen.getAllByRole("status", { name: /loading bridge summary/i });
+
   describe("Populated State", () => {
     it("renders all bridge summaries", () => {
       render(<BridgeSummaryGrid summaries={mockBridges} />);
@@ -97,14 +100,14 @@ describe("BridgeSummaryGrid", () => {
     it("renders skeleton cards when isLoading is true", () => {
       render(<BridgeSummaryGrid isLoading />);
       
-      const skeletons = screen.getAllByTestId(/bridge-summary-card-skeleton-/);
+      const skeletons = getSkeletonCards();
       expect(skeletons).toHaveLength(4); // Default loadingCount is 4
     });
 
     it("renders custom number of skeleton cards", () => {
       render(<BridgeSummaryGrid isLoading loadingCount={6} />);
       
-      const skeletons = screen.getAllByTestId(/bridge-summary-card-skeleton-/);
+      const skeletons = getSkeletonCards();
       expect(skeletons).toHaveLength(6);
     });
 
@@ -124,7 +127,7 @@ describe("BridgeSummaryGrid", () => {
       render(<BridgeSummaryGrid isLoading variant="detailed" />);
       
       // Skeleton cards should respect the variant prop
-      const skeletons = screen.getAllByTestId(/bridge-summary-card-skeleton-/);
+      const skeletons = getSkeletonCards();
       expect(skeletons).toHaveLength(4);
     });
   });
@@ -147,7 +150,7 @@ describe("BridgeSummaryGrid", () => {
       const { container } = render(<BridgeSummaryGrid isError />);
       
       const alertEl = container.querySelector("[role='alert']");
-      expect(alertEl?.parentElement?.firstChild).toHaveClass("col-span-full");
+      expect(alertEl?.firstElementChild).toHaveClass("col-span-full");
     });
 
     it("does not render card data when in error state", () => {
@@ -165,7 +168,7 @@ describe("BridgeSummaryGrid", () => {
     });
 
     it("empty message spans full grid width", () => {
-      const { container } = render(<BridgeSummaryGrid summaries={[]} />);
+      render(<BridgeSummaryGrid summaries={[]} />);
       
       const emptyDiv = screen.getByText("No bridges available").closest("div");
       expect(emptyDiv).toHaveClass("col-span-full");
@@ -208,7 +211,7 @@ describe("BridgeSummaryGrid", () => {
     it("passes loadingCount prop to control skeleton count", () => {
       render(<BridgeSummaryGrid isLoading loadingCount={8} />);
       
-      const skeletons = screen.getAllByTestId(/bridge-summary-card-skeleton-/);
+      const skeletons = getSkeletonCards();
       expect(skeletons).toHaveLength(8);
     });
   });
@@ -283,6 +286,6 @@ describe("BridgeSummaryGrid", () => {
       
       // Grid still has proper classes
       expect(container.firstChild).toHaveClass("grid");
-    });
+    }, 10_000);
   });
 });

@@ -81,8 +81,12 @@ export default function AssetDetail() {
   const { data: priceData, isLoading: priceLoading, refetch: refetchPrices } = usePrices(
     symbol ?? ""
   );
-  const { data: liquidityData, isLoading: liquidityLoading, refetch: refetchLiquidity } =
-    useLiquidity(symbol ?? "");
+  const {
+    venues: liquidityVenues,
+    isLoading: liquidityLoading,
+    lastUpdated: liquidityLastUpdated,
+    refetch: refetchLiquidity,
+  } = useLiquidity(symbol ?? "");
 
   const metadataQuery = useQuery({
     queryKey: ["asset-metadata", symbol],
@@ -164,7 +168,18 @@ export default function AssetDetail() {
     priceData?.history && priceData.history.length > 0
       ? priceData.history[priceData.history.length - 1].price
       : null;
-  const liquiditySourceCount = liquidityData?.sources?.length ?? 0;
+  const liquidityChartData = useMemo(
+    () =>
+      liquidityVenues.map((venue) => ({
+        dex: venue.venue,
+        bidDepth: venue.bidDepth,
+        askDepth: venue.askDepth,
+        totalLiquidity: venue.totalLiquidity,
+        timestamp: liquidityLastUpdated ?? undefined,
+      })),
+    [liquidityLastUpdated, liquidityVenues]
+  );
+  const liquiditySourceCount = liquidityVenues.length;
 
   const summaryFields = useMemo<EntitySummaryField[]>(() => {
     const score = health.data?.overallScore ?? null;
@@ -337,7 +352,7 @@ export default function AssetDetail() {
               />
               <LiquidityDepthChart
                 symbol={symbol}
-                data={liquidityData?.sources ?? []}
+                data={liquidityChartData}
                 isLoading={liquidityLoading}
                 chartId={`liquidity-${symbol}`}
               />

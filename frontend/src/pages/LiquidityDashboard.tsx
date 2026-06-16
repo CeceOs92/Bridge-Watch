@@ -37,7 +37,7 @@ export default function LiquidityDashboard() {
           role="alert"
           className="bg-red-900/30 border border-red-700 rounded-lg px-4 py-3 text-sm text-red-300"
         >
-          {typeof error === "string" ? error : (error as any).message}
+          {error}
         </div>
       )}
 

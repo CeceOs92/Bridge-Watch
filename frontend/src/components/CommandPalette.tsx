@@ -63,7 +63,11 @@ export default function CommandPalette() {
   function addRecent(id: string) {
     const next = [id, ...recent.filter((r) => r !== id)].slice(0, 10);
     setRecent(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (e) {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore storage failures in private browsing or quota-limited contexts.
+    }
   }
 
   function execute(action: CommandAction) {
@@ -74,6 +78,13 @@ export default function CommandPalette() {
   }
 
   if (!open) return null;
+
+  const visibleItems =
+    query.trim() === ""
+      ? recent
+          .map((id) => actionsRegistry.find((action) => action.id === id))
+          .filter((action): action is CommandAction => Boolean(action))
+      : items;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4" role="dialog" aria-modal="true">
@@ -87,7 +98,7 @@ export default function CommandPalette() {
             <div className="px-3 py-2 text-xs text-stellar-text-secondary">Recent</div>
           )}
           <ul>
-            {(query.trim() === "" ? actionsRegistry.filter(a => recent.includes(a.id)).map(id => actionsRegistry.find(a => a.id === id)!).filter(Boolean) : items).map((a) => (
+            {visibleItems.map((a) => (
               <li key={a.id} className="px-3 py-2 hover:bg-stellar-border/60 cursor-pointer" onClick={() => execute(a)}>
                 <div className="text-sm text-stellar-text-primary">{a.title}</div>
                 <div className="text-xs text-stellar-text-secondary">{a.href}</div>

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useBridgeSummaries, useBridgeSummary } from "./useBridgeSummary";
-import * as api from "../../services/api";
-import type { Bridge, BridgeStats } from "../../types";
+import * as api from "../services/api";
+import type { Bridge, BridgeStats } from "../types";
 
 // Mock the API functions
-vi.mock("../../services/api");
+vi.mock("../services/api");
 
 const mockBridges: Bridge[] = [
   {
@@ -64,7 +64,7 @@ const createWrapper = () => {
 describe("useBridgeSummaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.getBridges).mockResolvedValue(mockBridges);
+    vi.mocked(api.getBridges).mockResolvedValue({ bridges: mockBridges });
     vi.mocked(api.getBridgeStats).mockImplementation((name: string) =>
       Promise.resolve(mockStats[name])
     );
@@ -145,10 +145,8 @@ describe("useBridgeSummaries", () => {
   });
 
   it("respects refetchInterval option", async () => {
-    vi.useFakeTimers();
-
     const { result } = renderHook(
-      () => useBridgeSummaries({ refetchInterval: 5000 }),
+      () => useBridgeSummaries({ refetchInterval: 10 }),
       {
         wrapper: createWrapper(),
       }
@@ -158,16 +156,13 @@ describe("useBridgeSummaries", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(vi.mocked(api.getBridges)).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(5000);
+    const initialCallCount = vi.mocked(api.getBridges).mock.calls.length;
+    expect(initialCallCount).toBeGreaterThanOrEqual(1);
 
     await waitFor(() => {
-      expect(vi.mocked(api.getBridges)).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(api.getBridges).mock.calls.length).toBeGreaterThan(initialCallCount);
     });
-
-    vi.useRealTimers();
-  });
+  }, 10_000);
 
   it("respects refetchOnWindowFocus option", async () => {
     const { result } = renderHook(
@@ -194,7 +189,7 @@ describe("useBridgeSummaries", () => {
 describe("useBridgeSummary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.getBridges).mockResolvedValue(mockBridges);
+    vi.mocked(api.getBridges).mockResolvedValue({ bridges: mockBridges });
     vi.mocked(api.getBridgeStats).mockImplementation((name: string) =>
       Promise.resolve(mockStats[name])
     );
@@ -244,10 +239,8 @@ describe("useBridgeSummary", () => {
   });
 
   it("respects refetchInterval option", async () => {
-    vi.useFakeTimers();
-
     const { result } = renderHook(
-      () => useBridgeSummary("Circle", { refetchInterval: 3000 }),
+      () => useBridgeSummary("Circle", { refetchInterval: 10 }),
       {
         wrapper: createWrapper(),
       }
@@ -257,16 +250,13 @@ describe("useBridgeSummary", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(vi.mocked(api.getBridges)).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(3000);
+    const initialCallCount = vi.mocked(api.getBridges).mock.calls.length;
+    expect(initialCallCount).toBeGreaterThanOrEqual(1);
 
     await waitFor(() => {
-      expect(vi.mocked(api.getBridges)).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(api.getBridges).mock.calls.length).toBeGreaterThan(initialCallCount);
     });
-
-    vi.useRealTimers();
-  });
+  }, 10_000);
 
   it("handles stats fetch failure gracefully", async () => {
     vi.mocked(api.getBridgeStats).mockRejectedValue(

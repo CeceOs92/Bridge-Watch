@@ -48,6 +48,119 @@ export interface BridgeStats {
   uptime30d: number;
 }
 
+export type ReconciliationTriageStatus =
+  | "open"
+  | "investigating"
+  | "acknowledged"
+  | "resolved"
+  | "false_positive";
+
+export type DriftSeverity = "aligned" | "low" | "medium" | "high" | "critical";
+export type DriftTrendDirection = "new" | "improving" | "worsening" | "flat";
+export type ReconciliationRange = "24h" | "7d" | "30d" | "90d";
+export type ReconciliationStatus = "running" | "success" | "mismatch" | "failed";
+
+export interface ReconciliationSourceDatum {
+  id: "on-chain" | "reserve-attestation" | "reported-backing";
+  label: string;
+  source: string;
+  value: number | null;
+  unit: string;
+  observedAt: string | null;
+  status: string;
+  reference: string | null;
+  details: Record<string, string | number | boolean | null>;
+}
+
+export interface ReconciliationRun {
+  id: string;
+  assetCode: string;
+  bridgeName: string;
+  sourceChain: string | null;
+  status: ReconciliationStatus;
+  triageStatus: ReconciliationTriageStatus;
+  triageOwner: string | null;
+  triageNote: string | null;
+  triagedAt: string | null;
+  stellarSupply: number | null;
+  reportedSupply: number | null;
+  mismatchPercentage: number | null;
+  discrepancy: number | null;
+  discrepancyAbs: number | null;
+  severity: DriftSeverity;
+  startedAt: string;
+  finishedAt: string | null;
+  attempt: number;
+  jobId: string | null;
+  error: string | null;
+  sourceData: ReconciliationSourceDatum[];
+}
+
+export interface ReconciliationDriftSummary {
+  id: string;
+  assetCode: string;
+  bridgeName: string;
+  sourceChain: string | null;
+  latestRun: ReconciliationRun;
+  previousRunId: string | null;
+  severity: DriftSeverity;
+  trendDirection: DriftTrendDirection;
+  unresolved: boolean;
+  mismatchDelta: number | null;
+  runCount: number;
+  mismatchRunCount: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  history: Array<{
+    id: string;
+    startedAt: string;
+    mismatchPercentage: number | null;
+    status: ReconciliationStatus;
+    triageStatus: ReconciliationTriageStatus;
+  }>;
+}
+
+export interface ReconciliationDashboardResponse {
+  generatedAt: string;
+  filters: {
+    assetCode: string | null;
+    bridge: string | null;
+    range: ReconciliationRange;
+    startDate: string | null;
+    endDate: string | null;
+  };
+  totals: {
+    summaries: number;
+    unresolved: number;
+    critical: number;
+    mismatchRuns: number;
+  };
+  availableFilters: {
+    assets: string[];
+    bridges: string[];
+    ranges: ReconciliationRange[];
+  };
+  summaries: ReconciliationDriftSummary[];
+}
+
+export interface ReconciliationMismatchDetail {
+  generatedAt: string;
+  mismatch: ReconciliationRun;
+  history: ReconciliationRun[];
+  sourceData: ReconciliationSourceDatum[];
+  reserveCommitment: {
+    bridgeId: string;
+    sequence: number | null;
+    merkleRoot: string;
+    totalReserves: number | null;
+    status: string;
+    txHash: string | null;
+    committedAt: string | number;
+    committedLedger: number;
+    updatedAt: string | null;
+  } | null;
+}
+
 /**
  * Bridge summary data combining status and performance metrics
  * for display in summary card components

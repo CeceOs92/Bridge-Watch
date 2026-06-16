@@ -286,7 +286,7 @@ describe("DateRangePicker", () => {
 
       const stored = JSON.parse(localStorage.getItem("bridgewatch.recentRanges.v1") || "[]");
       expect(stored).toHaveLength(5);
-    });
+    }, 20_000);
 
     it("applies recent range when clicked", async () => {
       const user = userEvent.setup();

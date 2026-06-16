@@ -1,23 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useNotificationLiveUpdates } from "../hooks/useNotificationLiveUpdates";
 import { useWatchlist } from "../hooks/useWatchlist";
+import { selectUnreadCount, useNotificationStore } from "../stores/notificationStore";
 import EntitySwitcher from "./EntitySwitcher";
+import HamburgerButton from "./MobileNav/HamburgerButton";
+import MobileMenu from "./MobileNav/MobileMenu";
+import { desktopNavItems, isNavItemActive } from "./MobileNav/navigation";
+import NotificationsDrawer from "./NotificationsDrawer";
 import GlobalSearch from "./search/GlobalSearch";
-
-const navLinks = [
-  { to: "/", label: "Dashboard" },
-  { to: "/bridges", label: "Bridges" },
-  { to: "/analytics", label: "Analytics" },
-  { to: "/watchlists", label: "Watchlists" },
-  { to: "/incidents", label: "Incidents" },
-  { to: "/alerts", label: "Alerts" },
-  { to: "/data-provenance", label: "Provenance" },
-];
+import UnreadCountBadge from "./UnreadCountBadge";
 
 export default function Navbar() {
   const location = useLocation();
   const { activeSymbols } = useWatchlist();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const notificationTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previousDrawerOpen = useRef(false);
   const unreadCount = useNotificationStore(selectUnreadCount);
@@ -31,53 +29,59 @@ export default function Navbar() {
     previousDrawerOpen.current = isNotificationsOpen;
   }, [isNotificationsOpen]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <>
       <nav className="border-b border-stellar-border bg-stellar-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-3">
-            <div className="flex items-center space-x-8 min-w-0">
-              <Link to="/" className="text-xl font-bold text-white shrink-0">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-6">
+              <Link to="/dashboard" className="shrink-0 text-xl font-bold text-white">
                 Bridge Watch
               </Link>
-            ))}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden lg:block">
-            <GlobalSearch />
-          </div>
-          <EntitySwitcher />
-          <button
-            type="button"
-            className="hidden rounded-md px-2 py-1 text-sm text-stellar-text-secondary hover:bg-stellar-dark hover:text-white lg:inline-flex"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("bridgewatch:open-shortcuts"))
-            }
-            aria-label="Keyboard shortcuts"
-          >
-            ?
-          </button>
-          <div className="hidden items-center gap-2 text-xs text-stellar-text-secondary lg:flex">
-            <span>Quick:</span>
-            {activeSymbols.length === 0 ? (
-              <span>No watchlist assets</span>
-            ) : (
-              activeSymbols.slice(0, 3).map((symbol) => (
-                <Link
-                  key={symbol}
-                  to={`/assets/${symbol}`}
-                  className="rounded border border-stellar-border px-2 py-1 hover:text-white"
-                >
-                  {symbol}
-                </Link>
-              ))
-            )}
-          </div>
+              <div className="hidden items-center gap-1 xl:flex" aria-label="Primary navigation">
+                {desktopNavItems.slice(0, 8).map((item) => {
+                  const active = isNavItemActive(location.pathname, item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                        active
+                          ? "bg-stellar-blue/20 text-white"
+                          : "text-stellar-text-secondary hover:bg-stellar-dark hover:text-white"
+                      }`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-2 text-xs text-stellar-text-secondary">
+              <div className="hidden lg:block">
+                <GlobalSearch />
+              </div>
+              <div className="hidden md:block">
+                <EntitySwitcher />
+              </div>
+              <button
+                type="button"
+                className="hidden rounded-md px-2 py-1 text-sm text-stellar-text-secondary hover:bg-stellar-dark hover:text-white lg:inline-flex"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("bridgewatch:open-shortcuts"))
+                }
+                aria-label="Keyboard shortcuts"
+              >
+                ?
+              </button>
+              <div className="hidden items-center gap-2 text-xs text-stellar-text-secondary lg:flex">
                 <span>Quick:</span>
                 {activeSymbols.length === 0 ? (
                   <span>No watchlist assets</span>
@@ -94,14 +98,6 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/*
-                ARIA contract:
-                - aria-expanded mirrors drawer open state.
-                - aria-controls points to the drawer dialog id.
-                Keyboard contract:
-                - Enter/Space toggles drawer.
-                - Escape closes drawer (handled in drawer) and focus returns here.
-              */}
               <button
                 ref={notificationTriggerRef}
                 type="button"
@@ -129,14 +125,25 @@ export default function Navbar() {
                 </svg>
                 <UnreadCountBadge unreadCount={unreadCount} />
               </button>
+
+              <HamburgerButton
+                open={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen((open) => !open)}
+              />
             </div>
           </div>
         </div>
       </nav>
+
       <NotificationsDrawer
         open={isNotificationsOpen}
         drawerId="notifications-drawer"
         onClose={() => setIsNotificationsOpen(false)}
+      />
+      <MobileMenu
+        open={isMobileMenuOpen}
+        pathname={location.pathname}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
     </>
   );

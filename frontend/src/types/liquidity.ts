@@ -70,7 +70,7 @@ export interface LiquidityState {
   error: string | null;
   lastUpdated: string | null;
   data?: {
-    sources: any[];
+    sources: unknown[];
   } | null;
-  refetch: () => Promise<any>;
+  refetch: () => Promise<unknown>;
 }

@@ -2,13 +2,20 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "../../test/utils";
 import BridgeSummaryCard from "./BridgeSummaryCard";
 import type { BridgeSummary } from "../../types";
+import type { AnchorHTMLAttributes, ReactNode } from "react";
 
 // Mock react-router-dom Link to avoid navigation in tests
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
     ...actual,
-    Link: ({ children, ...props }: any) => <a {...props}>{children}</a>,
+    Link: ({
+      children,
+      to,
+      ...props
+    }: AnchorHTMLAttributes<HTMLAnchorElement> & { children?: ReactNode; to: string }) => (
+      <a href={to} {...props}>{children}</a>
+    ),
   };
 });
 
@@ -60,7 +67,7 @@ describe("BridgeSummaryCard", () => {
       render(<BridgeSummaryCard summary={mockBridgeSummary} variant="standard" />);
       
       expect(screen.getByText("Uptime")).toBeInTheDocument();
-      const uptime = screen.getByLabelText(/Coverage: 99.5%/);
+      const uptime = screen.getByLabelText(/Uptime: 99.5%/);
       expect(uptime).toBeInTheDocument();
     });
 
@@ -252,8 +259,8 @@ describe("BridgeSummaryCard", () => {
     it("has proper ARIA labels for numeric metrics", () => {
       render(<BridgeSummaryCard summary={mockBridgeSummary} variant="standard" />);
       
-      // Coverage metric has aria-label
-      expect(screen.getByLabelText(/Coverage:/)).toBeInTheDocument();
+      // Uptime metric has aria-label
+      expect(screen.getByLabelText(/Uptime:/)).toBeInTheDocument();
       
       // Performance metric has aria-label
       expect(screen.getByLabelText(/Avg Transfer Time:/)).toBeInTheDocument();
@@ -341,7 +348,7 @@ describe("BridgeSummaryCard", () => {
     it("formats supply numbers with thousands separator", () => {
       render(<BridgeSummaryCard summary={mockBridgeSummary} variant="detailed" />);
       
-      expect(screen.getByLabelText(/400,000,000 units/)).toBeInTheDocument();
+      expect(screen.getAllByLabelText(/400,000,000 units/)).toHaveLength(2);
     });
 
     it("formats recent timestamps as 'just now'", () => {

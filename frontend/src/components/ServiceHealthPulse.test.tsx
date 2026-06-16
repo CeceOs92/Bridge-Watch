@@ -195,12 +195,11 @@ describe("ServiceHealthPulse", () => {
       expect(screen.getByText("Degraded performance")).toBeInTheDocument();
     });
 
-    // Initially collapsed - service names should not be visible
-    expect(screen.queryByText("Horizon API")).not.toBeVisible();
-    expect(screen.queryByText("Circle API")).not.toBeVisible();
+    // Initially collapsed
+    const expandButton = screen.getByRole("button", { name: /expand service details/i });
+    expect(expandButton).toHaveAttribute("aria-expanded", "false");
 
     // Click expand button
-    const expandButton = screen.getByRole("button", { name: /expand service details/i });
     fireEvent.click(expandButton);
 
     // Services should now be visible
@@ -242,8 +241,10 @@ describe("ServiceHealthPulse", () => {
       expect(screen.getByText("All systems operational")).toBeInTheDocument();
     });
 
-    // Service name should not be visible when collapsed
-    expect(screen.queryByText("Horizon API")).not.toBeVisible();
+    expect(screen.getByRole("button", { name: /expand service details/i })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
   });
 
   it("renders error state when fetch fails", async () => {

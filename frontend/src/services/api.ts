@@ -19,6 +19,11 @@ import type {
   ExportFilters,
   ExportFormat,
   ExportRecord,
+  ReconciliationDashboardResponse,
+  ReconciliationMismatchDetail,
+  ReconciliationRange,
+  ReconciliationRun,
+  ReconciliationTriageStatus,
   UpdateAlertRoutingRuleRequest,
   ProvenanceGraph,
   ProvenanceListItem,
@@ -325,6 +330,54 @@ export function getBridges() {
 
 export function getBridgeStats(bridge: string) {
   return fetchApi<BridgeStats | null>(`/bridges/${bridge}/stats`);
+}
+
+export interface ReconciliationSummaryFilters {
+  assetCode?: string;
+  bridge?: string;
+  range?: ReconciliationRange;
+  startDate?: string;
+  endDate?: string;
+}
+
+export function getReconciliationDriftSummaries(
+  filters: ReconciliationSummaryFilters = {}
+) {
+  const params = new URLSearchParams();
+  if (filters.assetCode) params.set("assetCode", filters.assetCode);
+  if (filters.bridge) params.set("bridge", filters.bridge);
+  if (filters.range) params.set("range", filters.range);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+
+  const query = params.toString();
+  return fetchApi<ReconciliationDashboardResponse>(
+    `/reconciliation/drift-summaries${query ? `?${query}` : ""}`
+  );
+}
+
+export function getReconciliationMismatchDetail(
+  id: string,
+  range: ReconciliationRange = "30d"
+) {
+  const params = new URLSearchParams({ range });
+  return fetchApi<ReconciliationMismatchDetail>(
+    `/reconciliation/mismatches/${id}?${params.toString()}`
+  );
+}
+
+export function updateReconciliationTriage(
+  id: string,
+  payload: {
+    status: ReconciliationTriageStatus;
+    owner?: string | null;
+    note?: string | null;
+  }
+) {
+  return fetchApi<{ run: ReconciliationRun }>(`/reconciliation/runs/${id}/triage`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getDependencyGraph(filters?: {
