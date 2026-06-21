@@ -30,7 +30,7 @@ const Alerts = lazy(() => import("./pages/Alerts"));
 const DataProvenanceGraph = lazy(() => import("./pages/DataProvenanceGraph"));
 const AlertSimulationSandbox = lazy(() => import("./pages/AlertSimulationSandbox"));
 const LiquidityFragmentation = lazy(() => import("./pages/LiquidityFragmentation"));
-const AuditTrailPage = lazy(() => import("./pages/admin/audit/AuditTrailPage"));
+const OperationalAccessAudit = lazy(() => import("./pages/OperationalAccessAudit"));
 
 function NotificationInitializer() {
   useNotifications();
@@ -66,7 +66,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin/api-keys" element={<ApiKeys />} />
               <Route path="/admin/alert-routing" element={<AlertRoutingAdmin />} />
-              <Route path="/admin/access-audit" element={<AuditTrailPage />} />
+              <Route path="/admin/access-audit" element={<OperationalAccessAudit />} />
               <Route path="/supply-chain" element={<SupplyChain />} />
               <Route path="/reconciliation" element={<Reconciliation />} />
               <Route path="/api-docs" element={<ApiDocs />} />
