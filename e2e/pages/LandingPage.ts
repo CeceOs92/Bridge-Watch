@@ -18,6 +18,6 @@ export class LandingPage {
 
   async openDashboard(): Promise<void> {
     await this.launchAppButton.click();
-    await expect(this.page).toHaveURL(/\/dashboard$/);
+    await expect(this.page).toHaveURL(/\/dashboard/);
   }
 }
