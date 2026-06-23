@@ -3,6 +3,7 @@ import ColorPreviewTool from "../components/ColorPreviewTool";
 import { MetricsDrilldown } from "../components/MetricsDrilldown";
 import SnapshotCard from "../components/analytics/SnapshotCard";
 import BridgeComparison from "../components/analytics/BridgeComparison";
+import IncidentHeatmap from "../components/IncidentHeatmap";
 import type { BridgeAnalytics } from "../hooks/useAnalytics";
 import { useAssetsWithHealth } from "../hooks/useAssets";
 import { usePricesForSymbols } from "../hooks/usePrices";
@@ -233,6 +234,9 @@ export default function Analytics() {
       </div>
 
       <BridgeComparison bridges={bridgeData} isLoading={isLoading} />
+
+      {/* Incident Heatmap */}
+      <IncidentHeatmap />
 
       {/* Health Score Trends */}
       <div className="bg-stellar-card border border-stellar-border rounded-lg p-6">
