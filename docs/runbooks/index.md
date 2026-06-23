@@ -26,6 +26,7 @@ These runbooks cover the full lifecycle of a live incident from initial alert th
 |---|---|---|
 | Incident Response Guide | Severity matrix, roles, communication templates, escalation policy, and postmortem workflow | [../incident-response-guide.md](../incident-response-guide.md) |
 | Incident Response Templates | Copy-paste triage, update, status page, and postmortem formats with owner/action fields | [incident-response-templates.md](incident-response-templates.md) |
+| Support Escalation Tree | Tiered support path, owner contacts, availability notes, and maintenance workflow for support escalation | [support-escalation-tree.md](support-escalation-tree.md) |
 | Bridge Halt Response | Steps to take when the bridge circuit breaker activates and asset transfers are blocked | *(pending — file: `bridge-halt-response.md`)* |
 | Stale Oracle / Price Feed | How to diagnose and recover from stale or divergent asset price data across Stellar and source chains | *(pending — file: `stale-price-feed.md`)* |
 | Reserve Mismatch Alert | Procedure for investigating and resolving a discrepancy between on-chain reserve commitments and Circle API reported balances | *(pending — file: `reserve-mismatch.md`)* |
