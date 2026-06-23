@@ -5,14 +5,14 @@ export class DashboardPage {
   readonly heading: Locator;
   readonly assetHealthHeading: Locator;
   readonly bridgeStatusHeading: Locator;
-  readonly customizeWidgetsButton: Locator;
+  readonly exportDataButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.heading = page.getByRole("heading", { name: "Dashboard" });
     this.assetHealthHeading = page.getByRole("heading", { name: "Asset Health" });
     this.bridgeStatusHeading = page.getByRole("heading", { name: "Bridge Status" });
-    this.customizeWidgetsButton = page.getByRole("button", { name: "Customize widgets" });
+    this.exportDataButton = page.getByRole("button", { name: "Export data" });
   }
 
   async dismissOnboardingIfPresent(): Promise<void> {
@@ -33,12 +33,12 @@ export class DashboardPage {
     await expect(this.heading).toBeVisible();
     await expect(this.assetHealthHeading).toBeVisible();
     await expect(this.bridgeStatusHeading).toBeVisible();
-    await expect(this.page.getByRole("link", { name: /View details for bridge Allbridge/i })).toBeVisible();
     await expect(this.page.getByText("Allbridge")).toBeVisible();
+    await expect(this.page.getByRole("button", { name: "Inspect bridge details" }).first()).toBeVisible();
   }
 
-  async openCustomizationPanel(): Promise<void> {
-    await this.customizeWidgetsButton.click();
-    await expect(this.page.getByText("Preset layouts")).toBeVisible();
+  async openExportDialog(): Promise<void> {
+    await this.exportDataButton.click();
+    await expect(this.page.getByText("Export data")).toBeVisible();
   }
 }

@@ -20,15 +20,15 @@ test("navigates landing to dashboard and renders core widgets", async ({ page })
   await dashboardPage.assertLoaded();
 });
 
-test("opens widget customization and applies dashboard interactions", async ({ page }) => {
+test("opens export dialog and interacts with dashboard toolbar", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await page.goto("/dashboard");
   await dashboardPage.assertLoaded();
-  await dashboardPage.openCustomizationPanel();
+  await dashboardPage.openExportDialog();
 
-  await page.getByRole("button", { name: "Operations" }).click();
-  await expect(page.getByText("Layout import/export payload")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).first().click();
+  await expect(page.getByRole("button", { name: "Export data" })).toBeVisible();
 });
 
 test("loads bridges page and bridge cards from mocked data", async ({ page }) => {

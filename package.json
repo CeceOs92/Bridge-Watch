@@ -45,7 +45,8 @@
     "analytics"
   ],
   "devDependencies": {
-    "@playwright/test": "^1.54.2"
+    "@playwright/test": "^1.54.2",
+    "@types/use-sync-external-store": "^1.5.0"
   },
   "overrides": {
     "@asamuzakjp/css-color": "4.1.2"
