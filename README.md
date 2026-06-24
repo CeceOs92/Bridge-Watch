@@ -191,6 +191,7 @@ WS   /api/v1/ws                        # WebSocket for real-time updates
 ## Feature Documentation
 
 - Support handbook: [docs/support-handbook.md](docs/support-handbook.md)
+- Migration notes template: [docs/migration-notes-template.md](docs/migration-notes-template.md)
 - API authentication guide: [docs/api-authentication-guide.md](docs/api-authentication-guide.md)
 - Time range selector API: [docs/time-range-selector-api.md](docs/time-range-selector-api.md)
 - Watchlist feature: [docs/watchlist-feature.md](docs/watchlist-feature.md)

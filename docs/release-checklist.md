@@ -45,6 +45,7 @@ Tag-triggered releases cannot bypass the shield. An unauthorized or unexplained 
 
 ## Data Migration Checks
 
+- Create migration notes for the release using [migration-notes-template.md](./migration-notes-template.md) and link the completed notes in the release ticket.
 - Review pending migrations and identify:
   - schema changes
   - backfills

@@ -253,6 +253,8 @@ All updates from v1.0.0 to v1.5.0 are backward compatible.
 
 ## Migration Guides
 
+Use [Migration Notes Template](./migration-notes-template.md) for new release entries that require migration context.
+
 ### Migrating to v1.5.0 from v1.4.0
 
 **No migration required.** The frozen asset controls are new, optional features.
