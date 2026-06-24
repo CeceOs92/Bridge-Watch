@@ -708,3 +708,40 @@ export function getProvenanceLineage(
   if (bridge) params.set("bridge", bridge);
   return fetchApi<ProvenanceGraph>(`/provenance/lineage?${params.toString()}`);
 }
+
+// Incidents / Heatmap
+export interface HeatmapBucket {
+  date: string;
+  hour: number;
+  count: number;
+  bySeverity: Record<string, number>;
+  incidents: Array<{
+    id: string;
+    time: string;
+    entity_type: string;
+    entity_id: string;
+    asset_symbol: string;
+    severity: string;
+    title: string;
+    description: string;
+  }>;
+}
+
+export function getIncidentHeatmap(params?: {
+  startDate?: string;
+  endDate?: string;
+  assetSymbol?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.startDate) searchParams.set("startDate", params.startDate);
+  if (params?.endDate) searchParams.set("endDate", params.endDate);
+  if (params?.assetSymbol) searchParams.set("assetSymbol", params.assetSymbol);
+
+  const qs = searchParams.toString();
+  return fetchApi<{
+    buckets: HeatmapBucket[];
+    totalIncidents: number;
+    dateRange: { start: string; end: string };
+    assets: string[];
+  }>(`/incidents/heatmap${qs ? `?${qs}` : ""}`);
+}
