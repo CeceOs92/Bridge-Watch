@@ -184,10 +184,6 @@ function OperationsConsole() {
 }
 
 function ActionWrapper({ action, onExecute }: any) {
-  const { hasRole } = useAuth();
-  const required = action.requiredRole ?? "Viewer";
-  const allowed = hasRole(required);
-
   return (
     <ActionShortcutButton action={action} onExecute={onExecute} />
   );

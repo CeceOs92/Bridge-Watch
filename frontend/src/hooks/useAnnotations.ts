@@ -58,7 +58,7 @@ export function useAnnotations(reportId: string) {
     return newAnno;
   }
 
-  async function updateAnnotation(id: string, newContent: string, currentUser: UserProfile) {
+  async function updateAnnotation(id: string, newContent: string) {
     setLoading(true);
     await fakeApiDelay(true, 300);
     setAnnotations((s) =>
