@@ -69,9 +69,88 @@ export interface HealthSource {
   registered_at: number;
 }
 
+export type StatusTier = "ok" | "low" | "medium" | "high";
+
+export interface ContractStatusRollup {
+  tier: StatusTier;
+  asset_ok: number;
+  asset_low: number;
+  asset_medium: number;
+  asset_high: number;
+  bridge_ok: number;
+  bridge_low: number;
+  bridge_medium: number;
+  bridge_high: number;
+  timestamp: number;
+}
+
+export interface AssetStatusRollup {
+  asset_code: string;
+  tier: StatusTier;
+  health_score: number;
+  has_price_deviation_alert: boolean;
+  price_deviation_tier: StatusTier;
+  paused: boolean;
+  active: boolean;
+  timestamp: number;
+}
+
+export interface BridgeStatusRollup {
+  bridge_id: string;
+  tier: StatusTier;
+  latest_mismatch_bps: bigint;
+  is_critical: boolean;
+  timestamp: number;
+}
+
+export interface GlobalPauseState {
+  is_paused: boolean;
+  reason: string;
+  paused_at: number;
+  unpause_available_at: number;
+  emergency_contact: string;
+}
+
+export interface PauseRecord {
+  paused: boolean;
+  reason: string;
+  caller: string;
+  timestamp: number;
+}
+
+export type ConfigCategory = "Threshold" | "Timeouts" | "Limits";
+
+export interface ConfigValue {
+  value: bigint;
+  description: string;
+}
+
+export interface ConfigEntry {
+  category: ConfigCategory;
+  name: string;
+  value: ConfigValue;
+  version: number;
+  updated_at: number;
+  updated_by: string;
+}
+
+export interface AllConfigsExport {
+  entries: ConfigEntry[];
+  total: number;
+  exported_at: number;
+}
+
 export interface EventReplayPage {
   total: number;
   schema_version: number;
+}
+
+export interface SetHealthWeightsParams {
+  caller: string;
+  liquidity_weight: number;
+  price_stability_weight: number;
+  bridge_uptime_weight: number;
+  version: number;
 }
 
 export interface SubmitHealthParams {
@@ -276,6 +355,104 @@ function parseEventReplayPage(val: StellarSdk.xdr.ScVal): EventReplayPage {
   };
 }
 
+function parseStatusTier(val: StellarSdk.xdr.ScVal): StatusTier {
+  const v = parseScvString(val).toLowerCase();
+  if (["ok", "low", "medium", "high"].includes(v)) return v as StatusTier;
+  return "ok";
+}
+
+function parseScvI128AsNumber(val: StellarSdk.xdr.ScVal): number {
+  return Number(parseScvI128(val));
+}
+
+function parseContractStatusRollup(val: StellarSdk.xdr.ScVal): ContractStatusRollup {
+  const m = getScvMap(val);
+  return {
+    tier: parseStatusTier(m.get("tier")!),
+    asset_ok: parseScvU32(m.get("asset_ok")!),
+    asset_low: parseScvU32(m.get("asset_low")!),
+    asset_medium: parseScvU32(m.get("asset_medium")!),
+    asset_high: parseScvU32(m.get("asset_high")!),
+    bridge_ok: parseScvU32(m.get("bridge_ok")!),
+    bridge_low: parseScvU32(m.get("bridge_low")!),
+    bridge_medium: parseScvU32(m.get("bridge_medium")!),
+    bridge_high: parseScvU32(m.get("bridge_high")!),
+    timestamp: parseScvU64(m.get("timestamp")!),
+  };
+}
+
+function parseAssetStatusRollup(val: StellarSdk.xdr.ScVal): AssetStatusRollup {
+  const m = getScvMap(val);
+  return {
+    asset_code: parseScvString(m.get("asset_code")!),
+    tier: parseStatusTier(m.get("tier")!),
+    health_score: parseScvU32(m.get("health_score")!),
+    has_price_deviation_alert: parseScvBool(m.get("has_price_deviation_alert")!),
+    price_deviation_tier: parseStatusTier(m.get("price_deviation_tier")!),
+    paused: parseScvBool(m.get("paused")!),
+    active: parseScvBool(m.get("active")!),
+    timestamp: parseScvU64(m.get("timestamp")!),
+  };
+}
+
+function parseBridgeStatusRollup(val: StellarSdk.xdr.ScVal): BridgeStatusRollup {
+  const m = getScvMap(val);
+  return {
+    bridge_id: parseScvString(m.get("bridge_id")!),
+    tier: parseStatusTier(m.get("tier")!),
+    latest_mismatch_bps: parseScvI128(m.get("latest_mismatch_bps")!),
+    is_critical: parseScvBool(m.get("is_critical")!),
+    timestamp: parseScvU64(m.get("timestamp")!),
+  };
+}
+
+function parseGlobalPauseState(val: StellarSdk.xdr.ScVal): GlobalPauseState {
+  const m = getScvMap(val);
+  return {
+    is_paused: parseScvBool(m.get("is_paused")!),
+    reason: parseScvString(m.get("reason")!),
+    paused_at: parseScvU64(m.get("paused_at")!),
+    unpause_available_at: parseScvU64(m.get("unpause_available_at")!),
+    emergency_contact: parseScvString(m.get("emergency_contact")!),
+  };
+}
+
+function parsePauseRecord(val: StellarSdk.xdr.ScVal): PauseRecord {
+  const m = getScvMap(val);
+  return {
+    paused: parseScvBool(m.get("paused")!),
+    reason: parseScvString(m.get("reason")!),
+    caller: parseScvString(m.get("caller")!),
+    timestamp: parseScvU64(m.get("timestamp")!),
+  };
+}
+
+function parseConfigEntry(val: StellarSdk.xdr.ScVal): ConfigEntry {
+  const m = getScvMap(val);
+  const valueMap = getScvMap(m.get("value")!);
+  return {
+    category: parseScvString(m.get("category")!) as ConfigCategory,
+    name: parseScvString(m.get("name")!),
+    value: {
+      value: parseScvI128(valueMap.get("value")!),
+      description: parseScvString(valueMap.get("description")!),
+    },
+    version: parseScvU32(m.get("version")!),
+    updated_at: parseScvU64(m.get("updated_at")!),
+    updated_by: parseScvString(m.get("updated_by")!),
+  };
+}
+
+function parseVecOfStrings(val: StellarSdk.xdr.ScVal): string[] {
+  const items = val.vec() ?? [];
+  return items.map(parseScvString);
+}
+
+function parseVecOfPauseRecords(val: StellarSdk.xdr.ScVal): PauseRecord[] {
+  const items = val.vec() ?? [];
+  return items.map(parsePauseRecord);
+}
+
 function extractResultScVal(
   simulation: StellarSdk.rpc.Api.SimulateTransactionResponse
 ): StellarSdk.xdr.ScVal | undefined {
@@ -426,6 +603,104 @@ export class TypedBridgeWatchContractSdk extends BridgeWatchContractSdk {
   }
 
   // ---------------------------------------------------------
+  // Status & pause query methods
+  // ---------------------------------------------------------
+
+  async getContractStatus(): Promise<ContractStatusRollup | null> {
+    const result = await this.queryMethod({
+      method: "get_contract_status",
+    });
+    const val = extractResultScVal(result);
+    if (!val || isScvVoid(val)) return null;
+    return parseContractStatusRollup(val);
+  }
+
+  async getAssetStatusRollup(
+    assetCode: string
+  ): Promise<AssetStatusRollup | null> {
+    const result = await this.queryMethod({
+      method: "get_asset_status_rollup",
+      args: [scvString(assetCode)],
+    });
+    const val = extractResultScVal(result);
+    if (!val || isScvVoid(val)) return null;
+    return parseAssetStatusRollup(val);
+  }
+
+  async getBridgeStatusRollup(
+    bridgeId: string
+  ): Promise<BridgeStatusRollup | null> {
+    const result = await this.queryMethod({
+      method: "get_bridge_status_rollup",
+      args: [scvString(bridgeId)],
+    });
+    const val = extractResultScVal(result);
+    if (!val || isScvVoid(val)) return null;
+    return parseBridgeStatusRollup(val);
+  }
+
+  async isPaused(): Promise<boolean> {
+    const result = await this.queryMethod({
+      method: "is_paused",
+    });
+    const val = extractResultScVal(result);
+    if (!val) throw new BridgeWatchQueryError("Empty result from is_paused");
+    return parseScvBool(val);
+  }
+
+  async isAssetPaused(assetCode: string): Promise<boolean> {
+    const result = await this.queryMethod({
+      method: "is_asset_paused",
+      args: [scvString(assetCode)],
+    });
+    const val = extractResultScVal(result);
+    if (!val)
+      throw new BridgeWatchQueryError("Empty result from is_asset_paused");
+    return parseScvBool(val);
+  }
+
+  async getPauseStatus(): Promise<GlobalPauseState> {
+    const result = await this.queryMethod({
+      method: "get_pause_status",
+    });
+    const val = extractResultScVal(result);
+    if (!val)
+      throw new BridgeWatchQueryError("Empty result from get_pause_status");
+    return parseGlobalPauseState(val);
+  }
+
+  async getPauseHistory(): Promise<PauseRecord[]> {
+    const result = await this.queryMethod({
+      method: "get_pause_history",
+    });
+    const val = extractResultScVal(result);
+    if (!val) return [];
+    return parseVecOfPauseRecords(val);
+  }
+
+  async getMonitoredAssets(): Promise<string[]> {
+    const result = await this.queryMethod({
+      method: "get_monitored_assets",
+    });
+    const val = extractResultScVal(result);
+    if (!val) return [];
+    return parseVecOfStrings(val);
+  }
+
+  async getConfig(
+    category: ConfigCategory,
+    name: string
+  ): Promise<ConfigEntry | null> {
+    const result = await this.queryMethod({
+      method: "get_config",
+      args: [scvString(category), scvString(name)],
+    });
+    const val = extractResultScVal(result);
+    if (!val || isScvVoid(val)) return null;
+    return parseConfigEntry(val);
+  }
+
+  // ---------------------------------------------------------
   // Signature methods
   // ---------------------------------------------------------
 
@@ -552,6 +827,41 @@ export class TypedBridgeWatchContractSdk extends BridgeWatchContractSdk {
         scvString(params.asset_code),
         scvI128(params.price),
         scvString(params.source),
+      ],
+    });
+  }
+
+  async setHealthWeights(
+    params: SetHealthWeightsParams
+  ): ReturnType<BridgeWatchContractSdk["invokeAndSend"]> {
+    return this.invokeAndSend(
+      {
+        sourcePublicKey: params.caller,
+        method: "set_health_weights",
+        args: [
+          scvAddress(params.caller),
+          scvU32(params.liquidity_weight),
+          scvU32(params.price_stability_weight),
+          scvU32(params.bridge_uptime_weight),
+          scvU32(params.version),
+        ],
+      },
+      params.caller
+    );
+  }
+
+  async buildSetHealthWeightsTransaction(
+    params: SetHealthWeightsParams
+  ): ReturnType<BridgeWatchContractSdk["buildInvokeTransaction"]> {
+    return this.buildInvokeTransaction({
+      sourcePublicKey: params.caller,
+      method: "set_health_weights",
+      args: [
+        scvAddress(params.caller),
+        scvU32(params.liquidity_weight),
+        scvU32(params.price_stability_weight),
+        scvU32(params.bridge_uptime_weight),
+        scvU32(params.version),
       ],
     });
   }

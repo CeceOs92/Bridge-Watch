@@ -282,3 +282,130 @@ describe("TypedBridgeWatchContractSdk invoke wrappers", () => {
     expect(arg.method).toBe("submit_price");
   });
 });
+
+describe("TypedBridgeWatchContractSdk status & pause wrappers", () => {
+  let sdk: TypedBridgeWatchContractSdk;
+  let queryMethodSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    sdk = new TypedBridgeWatchContractSdk(testConfig);
+    queryMethodSpy = vi
+      .spyOn(sdk, "queryMethod" as keyof typeof sdk)
+      .mockResolvedValue({} as never);
+  });
+
+  it("getContractStatus calls queryMethod with get_contract_status", async () => {
+    await sdk.getContractStatus();
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_contract_status",
+      args: undefined,
+    });
+  });
+
+  it("getAssetStatusRollup calls queryMethod with get_asset_status_rollup", async () => {
+    await sdk.getAssetStatusRollup("USDC");
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_asset_status_rollup",
+      args: [expect.any(Object)],
+    });
+  });
+
+  it("getBridgeStatusRollup calls queryMethod with get_bridge_status_rollup", async () => {
+    await sdk.getBridgeStatusRollup("bridge-1");
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_bridge_status_rollup",
+      args: [expect.any(Object)],
+    });
+  });
+
+  it("isPaused calls queryMethod with is_paused", async () => {
+    await sdk.isPaused().catch(() => {});
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "is_paused",
+      args: undefined,
+    });
+  });
+
+  it("isAssetPaused calls queryMethod with is_asset_paused", async () => {
+    await sdk.isAssetPaused("USDC").catch(() => {});
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "is_asset_paused",
+      args: [expect.any(Object)],
+    });
+  });
+
+  it("getPauseStatus calls queryMethod with get_pause_status", async () => {
+    await sdk.getPauseStatus().catch(() => {});
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_pause_status",
+      args: undefined,
+    });
+  });
+
+  it("getPauseHistory calls queryMethod with get_pause_history", async () => {
+    await sdk.getPauseHistory();
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_pause_history",
+      args: undefined,
+    });
+  });
+
+  it("getMonitoredAssets calls queryMethod with get_monitored_assets", async () => {
+    await sdk.getMonitoredAssets();
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_monitored_assets",
+      args: undefined,
+    });
+  });
+
+  it("getConfig calls queryMethod with get_config", async () => {
+    await sdk.getConfig("Threshold", "min_health").catch(() => {});
+    expect(queryMethodSpy).toHaveBeenCalledWith({
+      method: "get_config",
+      args: [expect.any(Object), expect.any(Object)],
+    });
+  });
+});
+
+describe("TypedBridgeWatchContractSdk setHealthWeights", () => {
+  let sdk: TypedBridgeWatchContractSdk;
+  let invokeAndSendSpy: ReturnType<typeof vi.spyOn>;
+  let buildInvokeTransactionSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    sdk = new TypedBridgeWatchContractSdk(testConfig);
+    invokeAndSendSpy = vi
+      .spyOn(sdk, "invokeAndSend" as keyof typeof sdk)
+      .mockResolvedValue({ status: "SUCCESS" } as never);
+    buildInvokeTransactionSpy = vi
+      .spyOn(sdk, "buildInvokeTransaction" as keyof typeof sdk)
+      .mockResolvedValue({} as never);
+  });
+
+  it("setHealthWeights calls invokeAndSend with set_health_weights method", async () => {
+    await sdk.setHealthWeights({
+      caller: TEST_CALLER,
+      liquidity_weight: 30,
+      price_stability_weight: 40,
+      bridge_uptime_weight: 30,
+      version: 2,
+    });
+    expect(invokeAndSendSpy).toHaveBeenCalled();
+    const arg = invokeAndSendSpy.mock.calls[0][0];
+    expect(arg.method).toBe("set_health_weights");
+    expect(arg.sourcePublicKey).toBe(TEST_CALLER);
+  });
+
+  it("buildSetHealthWeightsTransaction calls buildInvokeTransaction", async () => {
+    await sdk.buildSetHealthWeightsTransaction({
+      caller: TEST_CALLER,
+      liquidity_weight: 30,
+      price_stability_weight: 40,
+      bridge_uptime_weight: 30,
+      version: 2,
+    });
+    expect(buildInvokeTransactionSpy).toHaveBeenCalled();
+    const arg = buildInvokeTransactionSpy.mock.calls[0][0];
+    expect(arg.method).toBe("set_health_weights");
+  });
+});
