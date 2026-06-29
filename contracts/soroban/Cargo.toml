@@ -28,3 +28,11 @@ path = "tests/source_trust.test.rs"
 [[test]]
 name = "escrow_contract_test"
 path = "tests/escrow_contract.test.rs"
+
+[[test]]
+name = "operator_rotation_test"
+path = "tests/operator_rotation.test.rs"
+
+[[test]]
+name = "threshold_window_test"
+path = "tests/threshold_window.test.rs"
