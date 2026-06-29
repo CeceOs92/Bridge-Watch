@@ -1056,3 +1056,30 @@ export function getFreshnessSourceTrend(
 export function getFreshnessAlerts(): Promise<{ alerts: FreshnessAlert[]; timestamp: string }> {
   return fetchApi<{ alerts: FreshnessAlert[]; timestamp: string }>("/freshness/alerts");
 }
+
+export interface SchemaDriftSummary {
+  source_name: string;
+  incident_count: number;
+  last_detected: string;
+}
+
+export interface SchemaDriftIncident {
+  id: string;
+  source_name: string;
+  drift_type: "ADDITION" | "REMOVAL" | "TYPE_CHANGE";
+  field_path: string;
+  expected_type?: string | null;
+  actual_type?: string | null;
+  is_breaking: boolean;
+  detected_at: string;
+  is_resolved?: boolean;
+}
+
+export interface SchemaDriftReport {
+  summary: SchemaDriftSummary[];
+  recentIncidents: SchemaDriftIncident[];
+}
+
+export function getSchemaDriftReport(): Promise<SchemaDriftReport> {
+  return fetchApi<SchemaDriftReport>("/schema-drift/report");
+}
