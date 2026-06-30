@@ -44,6 +44,7 @@ const AssetComparison = lazy(() => import("./pages/AssetComparison"));
 const MetricsSidebarPage = lazy(() => import("./pages/MetricsSidebar"));
 const CrossChainVerification = lazy(() => import("./pages/CrossChainVerification"));
 const FreshnessMonitoring = lazy(() => import("./pages/FreshnessMonitoring"));
+const ServiceAnnotations = lazy(() => import("./pages/ServiceAnnotations"));
 
 function NotificationInitializer() {
   useNotifications();
@@ -97,6 +98,7 @@ function App() {
               <Route path="/metrics-sidebar" element={<MetricsSidebarPage />} />
               <Route path="/cross-chain-verification" element={<CrossChainVerification />} />
               <Route path="/freshness" element={<FreshnessMonitoring />} />
+              <Route path="/service-annotations" element={<ServiceAnnotations />} />
             </Route>
           </Routes>
         </Suspense>

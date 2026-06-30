@@ -36,6 +36,7 @@ export const navGroups: NavGroup[] = [
       { to: "/reports", label: "Reports", description: "Operational reporting views" },
       { to: "/bridge-health-timeline", label: "Health Timeline", description: "Bridge health score progression over time" },
       { to: "/asset-comparison", label: "Asset Matrix", description: "Compare multiple assets across key metrics" },
+      { to: "/service-annotations", label: "Service Annotations", description: "Create and manage service annotations" },
     ],
   },
   {

@@ -550,3 +550,44 @@ export interface CrossChainVerificationSummary {
   errors: number;
   results: CrossChainStateResult[];
 }
+
+export interface ServiceAnnotation {
+  id: string;
+  serviceName: string;
+  entityType: string;
+  entityId: string | null;
+  content: string;
+  author: string;
+  startTime: string | null;
+  endTime: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceAnnotationInput {
+  serviceName: string;
+  entityType: string;
+  entityId?: string;
+  content: string;
+  author: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface UpdateServiceAnnotationInput {
+  actor: string;
+  content?: string;
+  active?: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
+}
+
+export interface ServiceAnnotationAuditEntry {
+  id: string;
+  annotation_id: string;
+  action: string;
+  actor: string;
+  changes: string;
+  created_at: string;
+}

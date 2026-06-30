@@ -29,6 +29,10 @@ import type {
   ProvenanceListItem,
   CrossChainStateResult,
   CrossChainVerificationSummary,
+  ServiceAnnotation,
+  CreateServiceAnnotationInput,
+  UpdateServiceAnnotationInput,
+  ServiceAnnotationAuditEntry,
 } from "../types";
 const API_BASE_URL = "/api/v1";
 
@@ -1082,4 +1086,57 @@ export interface SchemaDriftReport {
 
 export function getSchemaDriftReport(): Promise<SchemaDriftReport> {
   return fetchApi<SchemaDriftReport>("/schema-drift/report");
+}
+
+// Service Annotations
+export function listServiceAnnotations(params?: {
+  serviceName?: string;
+  entityType?: string;
+  entityId?: string;
+  active?: string;
+  author?: string;
+}): Promise<ServiceAnnotation[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.serviceName) searchParams.set("serviceName", params.serviceName);
+  if (params?.entityType) searchParams.set("entityType", params.entityType);
+  if (params?.entityId) searchParams.set("entityId", params.entityId);
+  if (params?.active) searchParams.set("active", params.active);
+  if (params?.author) searchParams.set("author", params.author);
+  const qs = searchParams.toString();
+  return fetchApi<ServiceAnnotation[]>(`/service-annotations${qs ? `?${qs}` : ""}`);
+}
+
+export function getServiceAnnotation(id: string): Promise<ServiceAnnotation> {
+  return fetchApi<ServiceAnnotation>(`/service-annotations/${id}`);
+}
+
+export function createServiceAnnotation(
+  input: CreateServiceAnnotationInput
+): Promise<ServiceAnnotation> {
+  return fetchApi<ServiceAnnotation>("/service-annotations", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateServiceAnnotation(
+  id: string,
+  input: UpdateServiceAnnotationInput
+): Promise<ServiceAnnotation> {
+  return fetchApi<ServiceAnnotation>(`/service-annotations/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteServiceAnnotation(id: string): Promise<Record<string, never>> {
+  return fetchApi<Record<string, never>>(`/service-annotations/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function getServiceAnnotationAudit(
+  id: string
+): Promise<ServiceAnnotationAuditEntry[]> {
+  return fetchApi<ServiceAnnotationAuditEntry[]>(`/service-annotations/${id}/audit`);
 }
