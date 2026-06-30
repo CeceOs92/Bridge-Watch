@@ -72,4 +72,37 @@ describe("Assets API", () => {
       expect(response.statusCode).toBe(200);
     });
   });
+
+  describe("GET /api/v1/assets/:symbol/price/history", () => {
+    it("should return price history data for an asset", async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: "/api/v1/assets/USDC/price/history",
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty("symbol", "USDC");
+      expect(body).toHaveProperty("period", "7d");
+      expect(body).toHaveProperty("points");
+      expect(Array.isArray(body.points)).toBe(true);
+    });
+  });
+
+  describe("GET /api/v1/assets/:symbol/volume/history", () => {
+    it("should return volume history data for an asset", async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: "/api/v1/assets/USDC/volume/history",
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body).toHaveProperty("symbol", "USDC");
+      expect(body).toHaveProperty("period", "7d");
+      expect(body).toHaveProperty("points");
+      expect(Array.isArray(body.points)).toBe(true);
+    });
+  });
 });
+

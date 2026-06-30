@@ -154,10 +154,10 @@ export function getAssetHealthHistory(
 ) {
   return fetchApi<
     | {
-        symbol: string;
-        period: "24h" | "7d" | "30d";
-        points: Array<{ timestamp: string; score: number }>;
-      }
+      symbol: string;
+      period: "24h" | "7d" | "30d";
+      points: Array<{ timestamp: string; score: number }>;
+    }
     | null
   >(`/assets/${symbol}/health/history?period=${period}`);
 }
@@ -228,6 +228,28 @@ export function getAssetPriceHistory(symbol: string, timeframe: string) {
   return fetchApi<Array<{ source: string; price: number; timestamp: string }>>(
     `/assets/${symbol}/price/history?timeframe=${timeframe}`
   );
+}
+
+export function getAssetPriceSparkline(
+  symbol: string,
+  period: "24h" | "7d" | "30d" = "7d"
+) {
+  return fetchApi<{
+    symbol: string;
+    period: "24h" | "7d" | "30d";
+    points: Array<{ timestamp: string; value: number }>;
+  }>(`/assets/${symbol}/price/history?period=${period}`);
+}
+
+export function getAssetVolumeSparkline(
+  symbol: string,
+  period: "24h" | "7d" | "30d" = "7d"
+) {
+  return fetchApi<{
+    symbol: string;
+    period: "24h" | "7d" | "30d";
+    points: Array<{ timestamp: string; value: number }>;
+  }>(`/assets/${symbol}/volume/history?period=${period}`);
 }
 
 export function getAssetPriceSources(symbol: string) {
