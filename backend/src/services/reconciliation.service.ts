@@ -468,7 +468,7 @@ export class ReconciliationService {
     const latestRun = sorted[0];
     const previousRun = sorted[1] ?? null;
     const mismatchDelta =
-      latestRun.mismatchPercentage !== null && previousRun?.mismatchPercentage !== null
+      latestRun.mismatchPercentage !== null && previousRun && previousRun.mismatchPercentage !== null
         ? latestRun.mismatchPercentage - previousRun.mismatchPercentage
         : null;
 
