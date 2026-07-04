@@ -1,9 +1,40 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { buildServer } from "../../src/index.js";
 import type { FastifyInstance } from "fastify";
 
+const circuitBreakerServiceMock = vi.hoisted(() => ({
+  isPaused: vi.fn(),
+  isWhitelistedAddress: vi.fn(),
+  isWhitelistedAsset: vi.fn(),
+  triggerPause: vi.fn(),
+  requestRecovery: vi.fn(),
+}));
+
+vi.mock("../../src/services/circuitBreaker.service.js", () => ({
+  getCircuitBreakerService: () => circuitBreakerServiceMock,
+  CircuitBreakerService: class {},
+  PauseScope: {
+    Global: 0,
+    Bridge: 1,
+    Asset: 2,
+  },
+  PauseLevel: {
+    None: 0,
+    Warning: 1,
+    Partial: 2,
+    Full: 3,
+  },
+}));
+
 describe("Circuit Breaker API", () => {
   let server: FastifyInstance;
+
+  beforeEach(() => {
+    Object.values(circuitBreakerServiceMock).forEach((mock) => mock.mockReset());
+    circuitBreakerServiceMock.isPaused.mockResolvedValue(false);
+    circuitBreakerServiceMock.isWhitelistedAddress.mockResolvedValue(false);
+    circuitBreakerServiceMock.isWhitelistedAsset.mockResolvedValue(false);
+  });
 
   beforeAll(async () => {
     server = await buildServer();

@@ -7,7 +7,11 @@ function makeDb(bridges: object[], operators: object[]) {
     const qb: any = {
       select: () => qb,
       where: () => qb,
-      orderBy: () => (table === "bridges" ? Promise.resolve(bridges) : Promise.resolve(operators)),
+      orderBy: () => qb,
+      then: (onfulfilled: any) => {
+        const result = table === "bridges" ? bridges : operators;
+        return Promise.resolve(result).then(onfulfilled);
+      },
     };
     return qb;
   };

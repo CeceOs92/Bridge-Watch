@@ -9,7 +9,13 @@ const mockDb = () => {
     escalation_history: [] as any[],
   };
 
+  const queries = new Map<string, any>();
+
   const createQuery = (table: string) => {
+    if (queries.has(table)) {
+      return queries.get(table);
+    }
+
     const query: any = {
       where: vi.fn().mockReturnThis(),
       whereIn: vi.fn().mockReturnThis(),
@@ -25,6 +31,8 @@ const mockDb = () => {
       update: vi.fn(async () => 1),
       select: vi.fn().mockReturnThis(),
     };
+
+    queries.set(table, query);
     return query;
   };
 
@@ -468,8 +476,8 @@ describe("EscalationService", () => {
         route_to: JSON.stringify([]),
       };
 
-      db("incidents").first.mockResolvedValueOnce(incident);
-      db("escalation_rules").first.mockResolvedValueOnce(rule);
+      db("incidents").first.mockResolvedValue(incident);
+      db("escalation_rules").first.mockResolvedValue(rule);
 
       await service["monitorIncident"]("incident-123");
 
@@ -518,8 +526,8 @@ describe("EscalationService", () => {
         route_to: JSON.stringify([]),
       };
 
-      db("incidents").first.mockResolvedValueOnce(incident);
-      db("escalation_rules").first.mockResolvedValueOnce(rule);
+      db("incidents").first.mockResolvedValue(incident);
+      db("escalation_rules").first.mockResolvedValue(rule);
 
       await service["monitorIncident"]("incident-123");
 

@@ -7,7 +7,16 @@ const mockDb = () => {
     external_dependency_checks: [] as any[],
   };
 
+  const queries = new Map<string, any>();
+
   const createQuery = (table: string) => {
+    if (queries.has(table)) {
+      return queries.get(table);
+    }
+
+    let insertData: any = null;
+    let updateData: any = null;
+
     const query: any = {
       where: vi.fn().mockReturnThis(),
       whereIn: vi.fn().mockReturnThis(),
@@ -15,43 +24,57 @@ const mockDb = () => {
         return this;
       }),
       select: vi.fn(function (this: any) {
-        return store[table as keyof typeof store] || [];
+        return this;
       }),
       first: vi.fn(async () => {
         const items = store[table as keyof typeof store];
         return items && items.length > 0 ? items[0] : null;
       }),
-      insert: vi.fn(async (data: any) => {
+      insert: vi.fn(function (this: any, data: any) {
         const items = Array.isArray(data) ? data : [data];
         store[table as keyof typeof store].push(...items);
-        return items;
+        insertData = items;
+        return this;
       }),
-      update: vi.fn(async (data: any) => {
+      update: vi.fn(function (this: any, data: any) {
         const items = store[table as keyof typeof store];
         if (items.length > 0) {
           Object.assign(items[0], data);
-          return [items[0]];
+          updateData = [items[0]];
+        } else {
+          updateData = [];
         }
-        return [];
+        return this;
       }),
       limit: vi.fn(function (this: any) {
         return this;
       }),
       onConflict: vi.fn().mockReturnThis(),
-      merge: vi.fn().mockResolvedValue(undefined),
-      returning: vi.fn(async function (this: any) {
-        const items = store[table as keyof typeof store];
-        return items.length > 0 ? [items[items.length - 1]] : [];
+      merge: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockReturnThis(),
+      then: vi.fn(async function (this: any, resolve: any, reject: any) {
+        try {
+          const items = store[table as keyof typeof store] || [];
+          let result: any = items;
+          if (insertData) {
+            result = insertData;
+          } else if (updateData) {
+            result = updateData;
+          }
+          return resolve(result);
+        } catch (err) {
+          if (reject) return reject(err);
+          throw err;
+        }
       }),
     };
 
-    query.select.mockImplementation(async () => store[table as keyof typeof store] || []);
-
+    queries.set(table, query);
     return query;
   };
 
   const db: any = (table: string) => createQuery(table);
-  db.raw = vi.fn();
+  db.raw = vi.fn((str) => str);
   db.fn = { now: () => new Date() };
   db.client = {
     wrapIdentifier: (id: string) => `"${id}"`,

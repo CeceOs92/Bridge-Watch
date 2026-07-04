@@ -43,6 +43,8 @@ vi.mock("../../src/config/index.js", () => ({
     REDIS_HOST: "localhost",
     REDIS_PORT: 6379,
     HEALTH_SCORE_THRESHOLD: 0.5,
+    LOG_LEVEL: "silent",
+    NODE_ENV: "test",
   },
 }));
 
