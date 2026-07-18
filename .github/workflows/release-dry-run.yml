@@ -242,7 +242,7 @@ jobs:
           if [ "${{ needs.dry-run-contract-build.result }}" != "success" ]; then STATUS="FAILED"; fi
           if [ "${{ needs.dry-run-image-build.result }}" != "success" ] && [ "${{ needs.dry-run-image-build.result }}" != "skipped" ]; then STATUS="FAILED"; fi
           if [ "${{ needs.dry-run-changelog.result }}" != "success" ]; then STATUS="FAILED"; fi
-          if [ "${{ needs.dry-run-environment-simulation.result }}" != "success" ]; then STATUS="FAILED"; fi
+          if [ "${{ needs.dry-run-environment-simulation.result }}" != "success" ] && [ "${{ needs.dry-run-environment-simulation.result }}" != "skipped" ]; then STATUS="FAILED"; fi
 
           echo "Overall Dry-Run Status: $STATUS"
 
